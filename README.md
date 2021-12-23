@@ -24,7 +24,7 @@ npx hardhat help
 
 # To start
 
-Start a local node
+Start a local node (local blockchain)
 
 ```shell
 
@@ -39,6 +39,8 @@ Open a new terminal and deploy the smart contract in the localhost network
 npx hardhat run --network localhost scripts/deploy.js
 
 ```
+
+Then, copy the address and
 
 # Configure MetaMask
 
