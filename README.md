@@ -40,7 +40,7 @@ npx hardhat run --network localhost scripts/deploy.js
 
 ```
 
-Then, copy the address and
+Then, copy the address and paste it into the "address" property in sch0lar.io-frontend/src/abis/DigitalIdentity.json to point the frontend at the smart contract.
 
 # Configure MetaMask
 
