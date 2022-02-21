@@ -1,11 +1,16 @@
 # Sch0lar Contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+This project hosts the contracts that power the Sch0lar protocol. It utilizes the Hardhat runtime environment for testing and deployment to local testnets.
+
+### NOTE:
+
+If editing in VS-code, openzeppelin imports often are not picked up by the syntax reader - if ever in doubt, copy and paste into remix.ethereum.org and compile for better warnings and error handlings.
+
+---
 
 Try running some of the following tasks with Hardhat:
 
 ```shell
-
 npx hardhat accounts
 
 npx hardhat compile
@@ -16,33 +21,38 @@ npx hardhat test
 
 npx hardhat node
 
-node scripts/sample-script.js
+node scripts/deploy.js
 
 npx hardhat help
-
 ```
 
-# To start
+## To start
+
+Install dependencies
+
+```shell
+npm install
+```
 
 Start a local node (local blockchain)
 
 ```shell
-
 npx hardhat node
-
 ```
 
 Open a new terminal and deploy the smart contract in the localhost network
 
 ```shell
-
 npx hardhat run --network localhost scripts/deploy.js
-
 ```
 
-Then, copy the address and paste it into the "address" property in sch0lar.io-frontend/src/abis/DigitalIdentity.json to point the frontend at the smart contract.
+Or, test your contracts with written unit tests (doesn't require a node running or contracts deployed).
 
-# Configure MetaMask
+```shell
+npx hardhat test
+```
+
+## Configure MetaMask
 
 Download [MetaMask](https://metamask.io) by adding a custom network with the following fields:
 
