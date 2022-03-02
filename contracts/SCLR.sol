@@ -79,8 +79,6 @@ contract Context {
 contract SCLR is IERC20, Context {
     
     using SafeMath for uint256;
-    mapping (address => mapping (address => uint256)) private _allowances;
-    
     address private _owner;
     string private _name;
     string private _symbol;
@@ -88,8 +86,8 @@ contract SCLR is IERC20, Context {
     uint256 private _totalSupply;
     uint8 decimals = 18;
 
+    mapping (address => mapping (address => uint256)) private _allowances;
     mapping (address => uint256) private _balances;
-
     mapping (address => mapping (address => uint256)) private _allowed;
     mapping (address => bool) _addressLocked;
     mapping (address => uint256) _finalSoldAmount;
