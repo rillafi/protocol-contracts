@@ -8,12 +8,10 @@ abstract contract Context {
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        this; 
         return msg.data;
     }
 }
-
-pragma solidity >=0.6.0 <0.8.0;
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);
@@ -46,7 +44,6 @@ interface IERC20 {
     );
 }
 
-pragma solidity >=0.6.0 <0.8.0;
 
 library SafeMath {
     function tryAdd(uint256 a, uint256 b)
@@ -340,7 +337,6 @@ contract ERC20 is Context, IERC20 {
     ) internal virtual {}
 }
 
-pragma solidity >=0.6.2 <0.8.0;
 
 library Address {
     function isContract(address account) internal view returns (bool) {
@@ -477,7 +473,6 @@ library Address {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
 
 library SafeERC20 {
     using SafeMath for uint256;
@@ -574,10 +569,6 @@ library SafeERC20 {
     }
 }
 
-// File: @openzeppelin/contracts/access/Ownable.sol
-
-pragma solidity >=0.6.0 <0.8.0;
-
 abstract contract Ownable is Context {
     address private _owner;
 
@@ -616,9 +607,6 @@ abstract contract Ownable is Context {
     }
 }
 
-// File: @openzeppelin/contracts/utils/ReentrancyGuard.sol
-
-pragma solidity >=0.6.0 <0.8.0;
 
 abstract contract ReentrancyGuard {
     uint256 private constant _NOT_ENTERED = 1;
@@ -644,9 +632,7 @@ abstract contract ReentrancyGuard {
     }
 }
 
-// File: contracts/BIFI/interfaces/beefy/IStrategy.sol
 
-pragma solidity ^0.6.0;
 
 interface IStrategy {
     function vault() external view returns (address);
@@ -680,7 +666,6 @@ interface IStrategy {
     function unirouter() external view returns (address);
 }
 
-pragma solidity ^0.6.0;
 
 contract BeefyVaultV6 is ERC20, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
