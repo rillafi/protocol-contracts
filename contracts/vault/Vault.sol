@@ -8,7 +8,7 @@ abstract contract Context {
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
-        this; 
+        this;
         return msg.data;
     }
 }
@@ -43,7 +43,6 @@ interface IERC20 {
         uint256 value
     );
 }
-
 
 library SafeMath {
     function tryAdd(uint256 a, uint256 b)
@@ -337,7 +336,6 @@ contract ERC20 is Context, IERC20 {
     ) internal virtual {}
 }
 
-
 library Address {
     function isContract(address account) internal view returns (bool) {
         uint256 size;
@@ -473,7 +471,6 @@ library Address {
     }
 }
 
-
 library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
@@ -607,7 +604,6 @@ abstract contract Ownable is Context {
     }
 }
 
-
 abstract contract ReentrancyGuard {
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
@@ -631,8 +627,6 @@ abstract contract ReentrancyGuard {
         _status = _NOT_ENTERED;
     }
 }
-
-
 
 interface IStrategy {
     function vault() external view returns (address);
@@ -665,7 +659,6 @@ interface IStrategy {
 
     function unirouter() external view returns (address);
 }
-
 
 contract BeefyVaultV6 is ERC20, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
