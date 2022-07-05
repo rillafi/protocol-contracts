@@ -1,8 +1,9 @@
-pragma solidity >=0.6.0 <0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view virtual returns (bytes memory) {
@@ -10,8 +11,6 @@ abstract contract Context {
         return msg.data;
     }
 }
-
-pragma solidity >=0.6.0 <0.8.0;
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);
@@ -45,8 +44,6 @@ interface IERC20 {
 }
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
-
-pragma solidity >=0.6.0 <0.8.0;
 
 library SafeMath {
     function tryAdd(uint256 a, uint256 b)
@@ -97,7 +94,6 @@ library SafeMath {
         return (true, a % b);
     }
 
-
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
         uint256 c = a + b;
         require(c >= a, "SafeMath: addition overflow");
@@ -126,7 +122,6 @@ library SafeMath {
         return a % b;
     }
 
-
     function sub(
         uint256 a,
         uint256 b,
@@ -154,8 +149,6 @@ library SafeMath {
         return a % b;
     }
 }
-
-pragma solidity >=0.6.0 <0.8.0;
 
 contract ERC20 is Context, IERC20 {
     using SafeMath for uint256;
@@ -295,6 +288,7 @@ contract ERC20 is Context, IERC20 {
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
+
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
 
@@ -340,7 +334,6 @@ contract ERC20 is Context, IERC20 {
         uint256 amount
     ) internal virtual {}
 }
-pragma solidity >=0.6.2 <0.8.0;
 
 library Address {
     function isContract(address account) internal view returns (bool) {
@@ -488,8 +481,6 @@ library Address {
 
 // File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
 
-pragma solidity >=0.6.0 <0.8.0;
-
 library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
@@ -587,8 +578,6 @@ library SafeERC20 {
 
 // File: contracts/BIFI/interfaces/common/IUniswapRouterETH.sol
 
-pragma solidity ^0.6.0;
-
 interface IUniswapRouterETH {
     function addLiquidity(
         address tokenA,
@@ -668,8 +657,6 @@ interface IUniswapRouterETH {
 
 // File: contracts/BIFI/interfaces/common/IUniswapV2Pair.sol
 
-pragma solidity ^0.6.0;
-
 interface IUniswapV2Pair {
     function factory() external view returns (address);
 
@@ -679,8 +666,6 @@ interface IUniswapV2Pair {
 }
 
 // File: contracts/BIFI/interfaces/common/IMasterChef.sol
-
-pragma solidity ^0.6.0;
 
 interface IMasterChef {
     function deposit(uint256 _pid, uint256 _amount) external;
@@ -696,8 +681,6 @@ interface IMasterChef {
 }
 
 // File: @openzeppelin/contracts/access/Ownable.sol
-
-pragma solidity >=0.6.0 <0.8.0;
 
 abstract contract Ownable is Context {
     address private _owner;
@@ -748,8 +731,6 @@ abstract contract Ownable is Context {
 
 // File: @openzeppelin/contracts/utils/Pausable.sol
 
-pragma solidity >=0.6.0 <0.8.0;
-
 abstract contract Pausable is Context {
     event Paused(address account);
 
@@ -787,8 +768,6 @@ abstract contract Pausable is Context {
 }
 
 // File: contracts/BIFI/strategies/Common/StratManager.sol
-
-pragma solidity ^0.6.12;
 
 contract StratManager is Ownable, Pausable {
     address public keeper;
@@ -831,12 +810,10 @@ contract StratManager is Ownable, Pausable {
         keeper = _keeper;
     }
 
- 
     function setStrategist(address _strategist) external {
         require(msg.sender == strategist, "!strategist");
         strategist = _strategist;
     }
-
 
     function setUnirouter(address _unirouter) external onlyOwner {
         unirouter = _unirouter;
@@ -870,8 +847,6 @@ contract StratManager is Ownable, Pausable {
 
 // File: contracts/BIFI/strategies/Common/FeeManager.sol
 
-pragma solidity ^0.6.12;
-
 abstract contract FeeManager is StratManager {
     uint256 public constant STRATEGIST_FEE = 112;
     uint256 public constant MAX_FEE = 1000;
@@ -900,8 +875,6 @@ abstract contract FeeManager is StratManager {
 }
 
 // File: contracts/BIFI/strategies/Common/StrategyCommonChefLP.sol
-
-pragma solidity ^0.6.0;
 
 contract StrategyCommonChefLP is StratManager, FeeManager {
     using SafeERC20 for IERC20;
@@ -1021,7 +994,7 @@ contract StrategyCommonChefLP is StratManager, FeeManager {
             0,
             outputToNativeRoute,
             address(this),
-            now
+            block.timestamp
         );
 
         uint256 nativeBal = IERC20(native).balanceOf(address(this));
@@ -1046,7 +1019,7 @@ contract StrategyCommonChefLP is StratManager, FeeManager {
                 0,
                 outputToLp0Route,
                 address(this),
-                now
+                block.timestamp
             );
         }
 
@@ -1056,7 +1029,7 @@ contract StrategyCommonChefLP is StratManager, FeeManager {
                 0,
                 outputToLp1Route,
                 address(this),
-                now
+                block.timestamp
             );
         }
 
@@ -1070,7 +1043,7 @@ contract StrategyCommonChefLP is StratManager, FeeManager {
             1,
             1,
             address(this),
-            now
+            block.timestamp
         );
     }
 
@@ -1121,14 +1094,14 @@ contract StrategyCommonChefLP is StratManager, FeeManager {
     }
 
     function _giveAllowances() internal {
-        IERC20(want).safeApprove(chef, uint256(-1));
-        IERC20(output).safeApprove(unirouter, uint256(-1));
+        IERC20(want).safeApprove(chef, uint256(2 ^ (256 - 1)));
+        IERC20(output).safeApprove(unirouter, uint256(2 ^ (256 - 1)));
 
         IERC20(lpToken0).safeApprove(unirouter, 0);
-        IERC20(lpToken0).safeApprove(unirouter, uint256(-1));
+        IERC20(lpToken0).safeApprove(unirouter, uint256(2 ^ (256 - 1)));
 
         IERC20(lpToken1).safeApprove(unirouter, 0);
-        IERC20(lpToken1).safeApprove(unirouter, uint256(-1));
+        IERC20(lpToken1).safeApprove(unirouter, uint256(2 ^ (256 - 1)));
     }
 
     function _removeAllowances() internal {

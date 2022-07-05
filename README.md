@@ -71,3 +71,31 @@ Download [MetaMask](https://metamask.io) by adding a custom network with the fol
 ### Currency Symbol
 
 `ETH`
+
+# Paths to determine contributed amounts
+
+## Problem: determine amount donated by each contributer and to which entity
+
+### Variables:
+
+- acpdTime, acpdAmount,
+
+Log contribution size and time entered
+timeEntered = timestamp
+lastAutoCompoundTime = timestamp
+nextAutoCompoundTime = timestamp
+enteredBetweenAutoCompounds = timeEntered > lastAutoCompoundTime && timeEntered <= nextAutoCompoundTime
+exitedBetweenAutoCompounds = timeExited > lastAutoCompoundTime && timeExited <= nextAutoCompoundTime
+timeEntered = enteredBetweenAutoCompounds ? timeEntered : !exitedBetweenAutoCompounds ? nextAutoCompoundTime : lastAutoCompoundtime // timeEntered if in range, 0 if
+timeExited = exitedBetweenAutoCompounds ? timeExited : lastAutoCompoundTime
+// =====entry-----------acmpd => = is uncounted, - is counted
+weightedEntries = size _ (nextAutoCompoundTime - timeExited) / (nextAutoCompoundTime - lastAutoCompoundTime) // fraction is between 0-1 if timeEntered is in range, 1 if no exit and was already in previously, and 0 if exited during this period between compounds
+// -----exit============acmpd => = is uncounted, - is counted
+weightedExits = size _ (timeExited - lastAutoCompoundTime) / (nextAutoCompoundTime - lastAutoCompoundTime) // fraction is between 0-1 if timeExited is in range, 0 if else
+weightedSize = weightedEntries + weightedExits
+Amount contributed from their account for given autocompoundTime = acpdAmount \* weightedSize[i] / sumAll( weightedSize )
+
+Steps:
+
+1. Query blockchain for all deposit / withdraw txns from last autocompound to current
+2.
