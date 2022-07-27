@@ -29,11 +29,11 @@ describe("Vesting", function () {
     depAdd = addys[0];
     userAdd = addys[1];
 
-    const Token = await ethers.getContractFactory("SCLR");
+    const Token = await ethers.getContractFactory("RILLA");
     token = await Token.deploy();
 
     const VeToken = await ethers.getContractFactory("VoteEscrow");
-    veToken = await VeToken.deploy(token.address, "veSCLR", "veSCLR", "1.0");
+    veToken = await VeToken.deploy(token.address, "veRILLA", "veRILLA", "1.0");
 
     const FeeDist = await ethers.getContractFactory("FeeDistributor");
     feeDist = await FeeDist.deploy(

@@ -6,7 +6,7 @@ function delay(time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-describe("veSCLR", function () {
+describe("veRILLA", function () {
   const MAXTIME = 4 * 365 * 86400;
 
   let accounts: Signer[];
@@ -29,14 +29,14 @@ describe("veSCLR", function () {
     depAdd = addys[0];
     userAdd = addys[1];
 
-    const Token = await ethers.getContractFactory("SCLR");
+    const Token = await ethers.getContractFactory("RILLA");
     token = await Token.deploy();
 
     const VeToken = await ethers.getContractFactory("VoteEscrow");
     veToken = await VeToken.deploy(
       token.address,
-      "Vote Escrowed SCLR",
-      "veSCLR",
+      "Vote Escrowed RILLA",
+      "veRILLA",
       "1.0"
     );
 

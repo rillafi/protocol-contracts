@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "./ERC4626.sol";
 
-abstract contract SCLRVault is ERC4626, Ownable {
+abstract contract RILLAVault is ERC4626, Ownable {
     // ===============================================================
     //                      COMMON BETWEEN VAULTS
     // ===============================================================
