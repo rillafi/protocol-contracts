@@ -10,17 +10,27 @@ abstract contract SCLRVault is ERC4626, Ownable {
     // ===============================================================
     //                      COMMON BETWEEN VAULTS
     // ===============================================================
-    address yieldSource;
     bool public pausedDeposit = false;
     bool public pausedWithdraw = false;
+    address yieldSource;
+    uint256 depositFeePercent; // MAX VALUE OF 10**18, cannot be greater than feePercent (target 0.5%)
+    uint256 feePercent; // MAX VALUE OF 10**18
+    address feeAddress;
+    address adminAddress;
 
     constructor(
         ERC20 _asset,
         string memory _name,
         string memory _symbol,
-        address _yieldSource
+        address _yieldSource,
+        uint256 _feePercent,
+        address _feeAddress,
+        address _adminAddress
     ) ERC4626(_asset, _name, _symbol) {
         yieldSource = _yieldSource;
+        feePercent = _feePercent;
+        feeAddress = _feeAddress;
+        adminAddress = _adminAddress;
     }
 
     modifier pausableDeposit() {
@@ -75,6 +85,10 @@ abstract contract SCLRVault is ERC4626, Ownable {
         override
         pausableDeposit
     {
+        ERC20(asset).transfer(
+            feeAddress,
+            (assets * depositFeePercent) / 10**18
+        );
         // call deposit on the yieldpartner contract
         handleDeposit(assets, shares);
     }
@@ -100,10 +114,20 @@ abstract contract SCLRVault is ERC4626, Ownable {
         // convert to shares
         uint256 pendingAssets = viewPendingRewardAssets();
         // claim that amount
-        handleCompound(compoundAmount, pendingAssets);
-        // deposit that amount
+        handleClaim(compoundAmount, pendingAssets);
+        // compound that amount
+        handleCompound(compoundAmount);
+
+        uint256 effectiveAdminPercent = 10**18 -
+            feePercent +
+            ((10**18 - feePercent) * depositFeePercent) /
+            10**18;
+        uint256 assetsToAdmin = (pendingAssets * effectiveAdminPercent) /
+            10**18;
+        // mint proper amount of shares to the admin account (for scholarships)
+        deposit(assetsToAdmin, adminAddress);
         // mint proper amount of shares to the fee account (15% or so of total pendingAssets)
-        // mint proper amount of shares to the admin account
+        deposit(pendingAssets - assetsToAdmin, feeAddress);
     }
 
     function viewBalance(address user) public view returns (uint256) {
@@ -121,10 +145,12 @@ abstract contract SCLRVault is ERC4626, Ownable {
 
     function handleDeposit(uint256 assets, uint256 shares) internal virtual {}
 
-    function handleCompound(uint256 compoundAmount, uint256 pendingAssets)
+    function handleClaim(uint256 claimAmount, uint256 pendingAssets)
         internal
         virtual
     {}
+
+    function handleCompound(uint256 compoundAmount) internal virtual {}
 
     function viewPendingRewards() internal virtual returns (uint256) {}
 
