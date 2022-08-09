@@ -110,12 +110,8 @@ abstract contract RILLAVault is ERC4626, Ownable {
     /// @notice Handles logic related to compounding deposits
     /// @dev Compounds are minted to the admin account, as yield is returned to that account
     function harvest() public {
-        // view amount to be autocompounded
-        uint256 compoundAmount = viewPendingRewards();
-        // convert to shares
-        uint256 pendingAssets = viewPendingRewardAssets();
-        // claim that amount
-        handleClaim(compoundAmount, pendingAssets);
+        // claim tokens
+        handleClaim();
         // charge fees and send donation to admin
         handleFeesAndAdmin();
         // compound that amount
@@ -136,13 +132,13 @@ abstract contract RILLAVault is ERC4626, Ownable {
             uint256
         )
     {
-        uint256 pendingRewards = viewPendingRewardAssets();
+        uint256 pendingRewards = viewPendingRewards();
         uint256 timeSince = block.timestamp - lastHarvest;
         return (totalAssets(), asset.decimals(), pendingRewards, timeSince);
     }
 
     // apy is this:
-    // percent = pendingRewards/(totalAssets()/asset.decimals())
+    // percent = $pendingRewards/(totalAssets()/asset.decimals())
     // annualizedApr = percent*365*24*60*60/timeSince
 
     // ===============================================================
@@ -156,23 +152,13 @@ abstract contract RILLAVault is ERC4626, Ownable {
 
     function handleDeposit(uint256 assets, uint256 shares) internal virtual {}
 
-    function handleClaim(uint256 claimAmount, uint256 pendingAssets)
-        internal
-        virtual
-    {}
+    function handleClaim() internal virtual {}
 
     function handleFeesAndAdmin() internal virtual {}
 
     function handleCompound() internal virtual {}
 
     function viewPendingRewards() internal view virtual returns (uint256) {}
-
-    function viewPendingRewardAssets()
-        internal
-        view
-        virtual
-        returns (uint256)
-    {}
 
     // function totalAssets()
 }

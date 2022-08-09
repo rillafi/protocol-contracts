@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
-import {RILLAVault} from "../../RILLAVault.sol";
+import {RILLAVault} from "../../../RILLAVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IVeloGauge {
@@ -9,6 +9,13 @@ interface IVeloGauge {
     function getReward(address account, address[] memory tokens) external;
 
     function withdraw(uint256 amount) external;
+
+    function earned(address token, address account)
+        external
+        view
+        returns (uint256);
+
+    function balanceOf(address user) external view returns (uint256);
 }
 
 interface IVeloPair {
@@ -117,53 +124,12 @@ contract rillaVeloVault is RILLAVault {
         veloGauge.depositAll(0);
     }
 
-    function handleClaim(uint256 claimAmount, uint256 pendingAssets)
-        internal
-        virtual
-        override
-    {
+    function handleClaim() internal virtual override {
         address[] memory tokens = new address[](3);
         tokens[0] = 0x0000000000000000000000000000000000000040;
         tokens[1] = 0x0000000000000000000000000000000000000001;
         tokens[3] = 0x3c8B650257cFb5f272f799F5e2b4e65093a11a05;
         veloGauge.getReward(address(this), tokens);
-    }
-
-    function addLiquidity() internal {
-        uint256 halfTokens = IERC20(rewardToken).balanceOf(address(this)) / 2;
-
-        if (token0 != rewardToken) {
-            veloRouter.swapExactTokensForTokens(
-                halfTokens,
-                0,
-                routeToken0,
-                address(this),
-                block.timestamp
-            );
-        }
-        if (token1 != rewardToken) {
-            veloRouter.swapExactTokensForTokens(
-                halfTokens,
-                0,
-                routeToken1,
-                address(this),
-                block.timestamp
-            );
-        }
-
-        uint256 bal0 = IERC20(token0).balanceOf(address(this));
-        uint256 bal1 = IERC20(token1).balanceOf(address(this));
-        veloRouter.addLiquidity(
-            token0,
-            token1,
-            veloPair.stable(),
-            bal0,
-            bal1,
-            1,
-            1,
-            address(this),
-            block.timestamp
-        );
     }
 
     function handleFeesAndAdmin() internal virtual override {
@@ -190,27 +156,17 @@ contract rillaVeloVault is RILLAVault {
         );
     }
 
-    // function handleCompound() internal virtual override {
-    //     // Swap half of token for each other LP token
-    //     addLiquidity();
-    //     // deposit new LPs back in gauge
-    // }
-
     function viewPendingRewards()
         internal
         view
         virtual
         override
         returns (uint256)
-    {}
+    {
+        return veloGauge.earned(rewardToken, address(this));
+    }
 
-    function viewPendingRewardAssets()
-        internal
-        view
-        virtual
-        override
-        returns (uint256)
-    {}
-
-    // function totalAssets()
+    function totalAssets() public view virtual override returns (uint256) {
+        return veloGauge.balanceOf(address(this));
+    }
 }
