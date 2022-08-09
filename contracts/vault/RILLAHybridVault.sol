@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "./ERC4626.sol";
 
-abstract contract RILLAVault is ERC4626, Ownable {
+abstract contract RILLAHybridVault is ERC4626, Ownable {
     // ===============================================================
     //                      COMMON BETWEEN VAULTS
     // ===============================================================
@@ -17,7 +17,7 @@ abstract contract RILLAVault is ERC4626, Ownable {
     uint256 feePercent; // MAX VALUE OF 10**6
     address feeAddress;
     address adminAddress;
-    uint256 lastHarvest;
+    uint256 lastCompound;
 
     constructor(
         address _asset,
@@ -109,7 +109,7 @@ abstract contract RILLAVault is ERC4626, Ownable {
 
     /// @notice Handles logic related to compounding deposits
     /// @dev Compounds are minted to the admin account, as yield is returned to that account
-    function harvest() public {
+    function compound() public {
         // view amount to be autocompounded
         uint256 compoundAmount = viewPendingRewards();
         // convert to shares
@@ -119,7 +119,20 @@ abstract contract RILLAVault is ERC4626, Ownable {
         // charge fees and send donation to admin
         handleFeesAndAdmin();
         // compound that amount
-        lastHarvest = block.timestamp;
+        // handleCompound();
+
+        // uint256 effectiveAdminPercent = 10**18 -
+        //     feePercent +
+        //     ((10**18 - feePercent) * depositFeePercent) /
+        //     10**18;
+        // uint256 assetsToAdmin = (pendingAssets * effectiveAdminPercent) /
+        //     10**18;
+        // mint proper amount of shares to the admin account (for scholarships)
+        // deposit(assetsToAdmin, adminAddress);
+        // mint proper amount of shares to the fee account (15% or so of total pendingAssets)
+        // deposit(pendingAssets - assetsToAdmin, feeAddress);
+
+        lastCompound = block.timestamp;
     }
 
     function viewBalance(address user) public view returns (uint256) {
@@ -137,7 +150,7 @@ abstract contract RILLAVault is ERC4626, Ownable {
         )
     {
         uint256 pendingRewards = viewPendingRewardAssets();
-        uint256 timeSince = block.timestamp - lastHarvest;
+        uint256 timeSince = block.timestamp - lastCompound;
         return (totalAssets(), asset.decimals(), pendingRewards, timeSince);
     }
 
