@@ -13,20 +13,21 @@ abstract contract RILLAVault is ERC4626, Ownable {
     bool public pausedDeposit = false;
     bool public pausedWithdraw = false;
     address yieldSource;
-    uint256 depositFeePercent; // MAX VALUE OF 10**18, cannot be greater than feePercent (target 0.5%)
-    uint256 feePercent; // MAX VALUE OF 10**18
+    uint256 depositFeePercent; // MAX VALUE OF 10**6, cannot be greater than feePercent (target 0.5%)
+    uint256 feePercent; // MAX VALUE OF 10**6
     address feeAddress;
     address adminAddress;
+    uint256 lastCompound;
 
     constructor(
-        ERC20 _asset,
+        address _asset,
         string memory _name,
         string memory _symbol,
         address _yieldSource,
         uint256 _feePercent,
         address _feeAddress,
         address _adminAddress
-    ) ERC4626(_asset, _name, _symbol) {
+    ) ERC4626(ERC20(_asset), _name, _symbol) {
         yieldSource = _yieldSource;
         feePercent = _feePercent;
         feeAddress = _feeAddress;
@@ -115,24 +116,47 @@ abstract contract RILLAVault is ERC4626, Ownable {
         uint256 pendingAssets = viewPendingRewardAssets();
         // claim that amount
         handleClaim(compoundAmount, pendingAssets);
+        // charge fees and send donation to admin
+        handleFeesAndAdmin();
         // compound that amount
-        handleCompound(compoundAmount);
+        // handleCompound();
 
-        uint256 effectiveAdminPercent = 10**18 -
-            feePercent +
-            ((10**18 - feePercent) * depositFeePercent) /
-            10**18;
-        uint256 assetsToAdmin = (pendingAssets * effectiveAdminPercent) /
-            10**18;
+        // uint256 effectiveAdminPercent = 10**18 -
+        //     feePercent +
+        //     ((10**18 - feePercent) * depositFeePercent) /
+        //     10**18;
+        // uint256 assetsToAdmin = (pendingAssets * effectiveAdminPercent) /
+        //     10**18;
         // mint proper amount of shares to the admin account (for scholarships)
-        deposit(assetsToAdmin, adminAddress);
+        // deposit(assetsToAdmin, adminAddress);
         // mint proper amount of shares to the fee account (15% or so of total pendingAssets)
-        deposit(pendingAssets - assetsToAdmin, feeAddress);
+        // deposit(pendingAssets - assetsToAdmin, feeAddress);
+
+        lastCompound = block.timestamp;
     }
 
     function viewBalance(address user) public view returns (uint256) {
         return convertToAssets(balanceOf[user]);
     }
+
+    function getStatsForApy()
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        uint256 pendingRewards = viewPendingRewardAssets();
+        uint256 timeSince = block.timestamp - lastCompound;
+        return (totalAssets(), asset.decimals(), pendingRewards, timeSince);
+    }
+
+    // apy is this:
+    // percent = pendingRewards/(totalAssets()/asset.decimals())
+    // annualizedApr = percent*365*24*60*60/timeSince
 
     // ===============================================================
     //                      VAULT SPECIFIC LOGIC
@@ -150,9 +174,18 @@ abstract contract RILLAVault is ERC4626, Ownable {
         virtual
     {}
 
-    function handleCompound(uint256 compoundAmount) internal virtual {}
+    function handleFeesAndAdmin() internal virtual {}
 
-    function viewPendingRewards() internal virtual returns (uint256) {}
+    function handleCompound() internal virtual {}
 
-    function viewPendingRewardAssets() internal virtual returns (uint256) {}
+    function viewPendingRewards() internal view virtual returns (uint256) {}
+
+    function viewPendingRewardAssets()
+        internal
+        view
+        virtual
+        returns (uint256)
+    {}
+
+    // function totalAssets()
 }
