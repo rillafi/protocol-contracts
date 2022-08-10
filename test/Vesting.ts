@@ -133,10 +133,6 @@ describe("Vesting", function () {
     await delay(2000);
     await token.transfer(addys[0], 1); // do a transaction to create new blocks and advance time onchain
     const curAmount = await vesting.computeReleasableAmount(id);
-    console.log(
-      Number(ethers.utils.formatEther(prevAmount)),
-      Number(ethers.utils.formatEther(curAmount))
-    );
     expect(Number(ethers.utils.formatEther(prevAmount))).to.be.lessThan(
       Number(ethers.utils.formatEther(curAmount))
     );
@@ -202,11 +198,9 @@ describe("Vesting", function () {
       );
     const id = _id[0];
     const amount = await vesting.computeReleasableAmount(id);
-    console.log(amount);
     await vesting.releaseAndLock(id, amount);
     const Balance = await veToken.functions["balanceOf(address)"](userAdd);
     const balance = Number(ethers.utils.formatEther(Balance[0]));
-    console.log(oldBalance, balance);
     expect(balance).to.be.greaterThan(oldBalance);
   });
 });

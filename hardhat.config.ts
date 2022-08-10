@@ -14,7 +14,6 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 dotenv.config();
-const archive_node = process.env.ARCHIVE_NODE;
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -30,7 +29,7 @@ export default {
   networks: {
     hardhat: {
       forking: {
-        url: archive_node,
+        url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
       },
     },
   },
