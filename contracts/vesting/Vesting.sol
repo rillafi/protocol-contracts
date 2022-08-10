@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import {VeToken} from "../token/VeToken.sol";
+import {IVeToken} from "../token/IVeToken.sol";
 
 /// @title TokenVesting - This contract enables the storage of
 /// tokens alongside a vesting schdule that release a subset
@@ -46,7 +46,7 @@ contract TokenVesting is Ownable, ReentrancyGuard {
     // address of the ERC20 token
     IERC20 private immutable _token;
     // address of the VoteEscrow token
-    VeToken private immutable _veToken;
+    IVeToken private immutable _veToken;
 
     bytes32[] private vestingSchedulesIds;
     mapping(bytes32 => VestingSchedule) private vestingSchedules;
@@ -80,7 +80,7 @@ contract TokenVesting is Ownable, ReentrancyGuard {
     constructor(address token_, address veToken_) {
         require(token_ != address(0x0) && veToken_ != address(0x0));
         _token = IERC20(token_);
-        _veToken = VeToken(veToken_);
+        _veToken = IVeToken(veToken_);
     }
 
     receive() external payable {}

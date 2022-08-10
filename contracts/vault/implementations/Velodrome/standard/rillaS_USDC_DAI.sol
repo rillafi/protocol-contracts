@@ -74,11 +74,7 @@ contract rillaVeloVault is RILLAVault {
         address _feeAddress,
         address _adminAddress,
         address _veloGauge,
-        address _token0,
-        address _token1,
         address _rewardToken,
-        IVeloRouter.route[] memory _routeToken0,
-        IVeloRouter.route[] memory _routeToken1,
         IVeloRouter.route[] memory _routeFeeToken
     )
         RILLAVault(
@@ -94,17 +90,8 @@ contract rillaVeloVault is RILLAVault {
         veloGauge = IVeloGauge(_veloGauge);
         veloPair = IVeloPair(_asset);
         rewardToken = _rewardToken;
-        routeFeeToken = _routeFeeToken;
-        if (veloPair.token0() == _token0) {
-            token0 = _token0;
-            token1 = _token1;
-            routeToken0 = _routeToken0;
-            routeToken1 = _routeToken1;
-        } else {
-            token0 = _token1;
-            token1 = _token0;
-            routeToken0 = _routeToken1;
-            routeToken1 = _routeToken0;
+        for (uint256 i = 0; i < _routeFeeToken.length; i++) {
+            routeFeeToken.push(_routeFeeToken[i]);
         }
     }
 
