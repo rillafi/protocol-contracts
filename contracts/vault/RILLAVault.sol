@@ -5,6 +5,7 @@ import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "./ERC4626.sol";
+import "hardhat/console.sol";
 
 abstract contract RILLAVault is ERC4626, Ownable {
     // ===============================================================
@@ -12,7 +13,6 @@ abstract contract RILLAVault is ERC4626, Ownable {
     // ===============================================================
     bool public pausedDeposit = false;
     bool public pausedWithdraw = false;
-    address yieldSource;
     uint256 depositFeePercent; // MAX VALUE OF 10**6, cannot be greater than feePercent (target 0.5%)
     uint256 feePercent; // MAX VALUE OF 10**6
     address feeAddress;
@@ -23,12 +23,10 @@ abstract contract RILLAVault is ERC4626, Ownable {
         address _asset,
         string memory _name,
         string memory _symbol,
-        address _yieldSource,
         uint256 _feePercent,
         address _feeAddress,
         address _adminAddress
     ) ERC4626(ERC20(_asset), _name, _symbol) {
-        yieldSource = _yieldSource;
         feePercent = _feePercent;
         feeAddress = _feeAddress;
         adminAddress = _adminAddress;
@@ -71,12 +69,6 @@ abstract contract RILLAVault is ERC4626, Ownable {
         revert();
     }
 
-    /// @notice Approve the transfer of tokens for our yield partner's contract
-    /// @param amount number of assets supplied by the depositor
-    function approveYieldSource(uint256 amount) public onlyOwner {
-        asset.approve(yieldSource, amount);
-    }
-
     /// @notice Handles logic related to deposits
     /// @param assets number of assets supplied by the depositor
     /// @param shares number of shares issued by the vault
@@ -86,10 +78,7 @@ abstract contract RILLAVault is ERC4626, Ownable {
         override
         pausableDeposit
     {
-        ERC20(asset).transfer(
-            feeAddress,
-            (assets * depositFeePercent) / 10**18
-        );
+        ERC20(asset).transfer(feeAddress, (assets * depositFeePercent) / 10**6);
         // call deposit on the yieldpartner contract
         handleDeposit(assets, shares);
     }

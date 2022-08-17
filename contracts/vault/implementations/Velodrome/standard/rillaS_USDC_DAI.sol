@@ -2,9 +2,12 @@
 pragma solidity ^0.8.7;
 import {RILLAVault} from "../../../RILLAVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {console} from "hardhat/console.sol";
 
 interface IVeloGauge {
     function depositAll(uint256 tokenId) external;
+
+    function deposit(uint256, uint256) external;
 
     function getReward(address account, address[] memory tokens) external;
 
@@ -22,6 +25,12 @@ interface IVeloPair {
     function token0() external returns (address);
 
     function stable() external returns (bool);
+
+    function allowance(address owner, address spender)
+        external
+        returns (uint256);
+
+    function approve(address spender, uint256 value) external returns (bool);
 }
 
 interface IVeloRouter {
@@ -52,7 +61,7 @@ interface IVeloRouter {
     ) external;
 }
 
-contract rillaVeloVault is RILLAVault {
+contract rillaVelodromeVault is RILLAVault {
     IVeloGauge veloGauge;
     IVeloPair veloPair;
     address token0;
@@ -61,27 +70,23 @@ contract rillaVeloVault is RILLAVault {
     address feeCollectionToken;
     IVeloRouter public immutable veloRouter =
         IVeloRouter(0xa132DAB612dB5cB9fC9Ac426A0Cc215A3423F9c9);
-    IVeloRouter.route[] public routeToken0;
-    IVeloRouter.route[] public routeToken1;
-    IVeloRouter.route[] public routeFeeToken;
+    IVeloRouter.route[] public routeRewardToken;
 
     constructor(
         address _asset,
         string memory _name,
         string memory _symbol,
-        address _yieldSource,
         uint256 _feePercent,
         address _feeAddress,
         address _adminAddress,
         address _veloGauge,
         address _rewardToken,
-        IVeloRouter.route[] memory _routeFeeToken
+        IVeloRouter.route[] memory _routeRewardToken
     )
         RILLAVault(
             _asset,
             _name,
             _symbol,
-            _yieldSource,
             _feePercent,
             _feeAddress,
             _adminAddress
@@ -90,8 +95,8 @@ contract rillaVeloVault is RILLAVault {
         veloGauge = IVeloGauge(_veloGauge);
         veloPair = IVeloPair(_asset);
         rewardToken = _rewardToken;
-        for (uint256 i = 0; i < _routeFeeToken.length; i++) {
-            routeFeeToken.push(_routeFeeToken[i]);
+        for (uint256 i = 0; i < _routeRewardToken.length; i++) {
+            routeRewardToken.push(_routeRewardToken[i]);
         }
     }
 
@@ -108,14 +113,19 @@ contract rillaVeloVault is RILLAVault {
         virtual
         override
     {
+        if (veloPair.allowance(address(this), address(veloGauge)) < assets) {
+            veloPair.approve(address(veloGauge), type(uint256).max);
+        }
         veloGauge.depositAll(0);
+        // veloGauge.deposit(assets, 0);
+        console.log(assets);
     }
 
     function handleClaim() internal virtual override {
         address[] memory tokens = new address[](3);
         tokens[0] = 0x0000000000000000000000000000000000000040;
         tokens[1] = 0x0000000000000000000000000000000000000001;
-        tokens[3] = 0x3c8B650257cFb5f272f799F5e2b4e65093a11a05;
+        tokens[2] = 0x3c8B650257cFb5f272f799F5e2b4e65093a11a05;
         veloGauge.getReward(address(this), tokens);
     }
 
@@ -126,7 +136,7 @@ contract rillaVeloVault is RILLAVault {
         veloRouter.swapExactTokensForTokens(
             rewardBalance,
             0,
-            routeFeeToken,
+            routeRewardToken,
             address(this),
             block.timestamp
         );

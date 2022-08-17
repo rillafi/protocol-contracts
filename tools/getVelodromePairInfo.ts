@@ -18,4 +18,4 @@ async function getVelodromePairInfo(
   }
 }
 
-getVelodromePairInfo("USDC", "DAI", true);
+getVelodromePairInfo("DAI", "USDC", false);

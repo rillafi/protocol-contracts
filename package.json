@@ -15,8 +15,11 @@
   },
   "dependencies": {
     "@acala-network/contracts": "^2.3.3",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@openzeppelin/contracts": "^4.4.0",
     "@rari-capital/solmate": "^6.2.0",
-    "dotenv": "^16.0.1"
+    "dotenv": "^16.0.1",
+    "hardhat-change-network": "^0.0.7"
   }
 }
