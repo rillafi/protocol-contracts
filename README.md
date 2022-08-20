@@ -1,6 +1,6 @@
-# Sch0lar Contracts
+# Rilla Contracts
 
-This project hosts the contracts that power the Sch0lar protocol. It utilizes the Hardhat runtime environment for testing and deployment to local testnets.
+This project hosts the contracts that power the Rilla protocol. It utilizes the Hardhat runtime environment for testing and deployment to local testnets.
 
 ### NOTE:
 

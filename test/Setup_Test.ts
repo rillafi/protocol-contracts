@@ -15,14 +15,14 @@
 //     it("should deploy contracts", async function () {
 //       // Do something with the accounts
 //       // load token contract
-//       const Token = await ethers.getContractFactory("Sch0lar");
+//       const Token = await ethers.getContractFactory("Rilla");
 //       // deploy token contract
 //       const token = await Token.deploy();
 //       await token.wait();
-//       // load Sch0larIndex contract
-//       const Sch0larIndex = await ethers.getContractFactory("Sch0larIndex");
-//       // deploy Sch0larIndex contract
-//       const scholarIndex = await Sch0larIndex.deploy();
+//       // load RillaIndex contract
+//       const RillaIndex = await ethers.getContractFactory("RillaIndex");
+//       // deploy RillaIndex contract
+//       const scholarIndex = await RillaIndex.deploy();
 //       await scholarIndex.wait();
 //     });
 //   });
