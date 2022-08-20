@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import _ from "lodash";
 
 export interface DeployedInfo {
   address: string;
@@ -8,6 +9,7 @@ export interface DeployedInfo {
   verified: boolean;
   deployedTransaction: Object;
   contractName: string;
+  constructorArguments: any[];
 }
 
 export function saveDeployedInfo(
@@ -37,4 +39,11 @@ export function saveDeployedInfo(
     ),
     JSON.stringify(deployedInfo)
   );
+}
+
+export function objectInArray(obj: Object, arr: any[]) {
+  for (const elem of arr) {
+    if (_.isEqual(obj, elem)) return true;
+  }
+  return false;
 }

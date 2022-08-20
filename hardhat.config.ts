@@ -25,7 +25,15 @@ dotenv.config();
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
-  solidity: "0.8.7",
+  solidity: {
+    version: "0.8.16",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   vyper: {
     compilers: [{ version: "0.2.4" }, { version: "0.2.7" }],
   },

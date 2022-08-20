@@ -21,7 +21,8 @@ function getAllFiles(dirPath: string, arrayOfFiles: string[]) {
 async function verifyEtherscanAndSave(
   allContracts: string[],
   deployedInfo: DeployedInfo,
-  contractName: string
+  contractName: string,
+  constructorArguments: any[]
 ) {
   const match = allContracts.find((element) => {
     if (element.includes(`${contractName}.sol`)) {
@@ -31,7 +32,7 @@ async function verifyEtherscanAndSave(
   try {
     await hre.run("verify:verify", {
       address: deployedInfo.address,
-      constructorArguments: [],
+      constructorArguments,
       contract: `${match?.substring(
         1 + match?.indexOf("/contracts/")
       )}:${contractName}`,
@@ -48,6 +49,7 @@ async function verifyEtherscanAndSave(
             `../deployed_contracts/${chain}/${contractName}.json`
           )
       );
+      console.dir(e);
     } else {
       console.log(e);
       console.dir(e);
@@ -79,7 +81,12 @@ async function main() {
         if (hre.network.name !== deployedInfo.network.name)
           hre.changeNetwork(deployedInfo.network.name);
         console.log(deployedInfo.address);
-        await verifyEtherscanAndSave(allContracts, deployedInfo, contractName);
+        await verifyEtherscanAndSave(
+          allContracts,
+          deployedInfo,
+          contractName,
+          deployedInfo.constructorArguments
+        );
       }
     }
   }

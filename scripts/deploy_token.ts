@@ -10,7 +10,8 @@ import fs, { symlinkSync } from "fs";
 import path from "path";
 async function getDeployedInfo(
   contract: Contract,
-  contractName: string
+  contractName: string,
+  constructorArguments: any[]
 ): Promise<DeployedInfo> {
   return {
     abi: JSON.parse(
@@ -21,25 +22,32 @@ async function getDeployedInfo(
     network: await contract.provider.getNetwork(),
     verified: false,
     contractName: contractName,
+    constructorArguments,
   };
 }
 
 async function main() {
   const contractName = "RILLA";
-  // if (
-  //   fs.existsSync(
-  //     path.join(
-  //       __dirname,
-  //       `../deployed_contracts/${hre.network.config.chainId}/${contractName}.json`
-  //     )
-  //   )
-  // ) {
-  //   console.log("Contract already deployed");
-  //   process.exit(0);
-  // }
+  if (
+    fs.existsSync(
+      path.join(
+        __dirname,
+        `../deployed_contracts/${hre.network.config.chainId}/${contractName}.json`
+      )
+    )
+  ) {
+    console.log("Contract already deployed");
+    process.exit(0);
+  }
   const Token = await ethers.getContractFactory(contractName);
+  const constructorArguments: any[] = [];
   const token = await Token.deploy();
-  const deployedInfo = await getDeployedInfo(token, contractName);
+  console.log("Token deployed at " + token.address);
+  const deployedInfo = await getDeployedInfo(
+    token,
+    contractName,
+    constructorArguments
+  );
   saveDeployedInfo(deployedInfo, contractName);
 }
 
