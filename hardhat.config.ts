@@ -15,6 +15,15 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     console.log(account.address);
   }
 });
+task(
+  "node:extended",
+  "Starts a JSON-RPC server on top of Hardhat Network, forks from mainnet",
+  async (taskArgs, hre) => {
+    await hre.run("node");
+    // never reaches past here
+    console.log("Hello world!");
+  }
+);
 
 dotenv.config();
 
@@ -42,6 +51,13 @@ export default {
       chainId: 31337,
       forking: {
         url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
+      },
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20,
+        passphrase: "",
       },
     },
     goerli: {

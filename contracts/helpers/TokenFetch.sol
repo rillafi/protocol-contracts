@@ -2,24 +2,38 @@
 pragma solidity ^0.8.16;
 
 interface IERC20 {
-    function balanceOf(address user) external view returns (uint256);
+    function balanceOf(address owner) external view returns (uint256);
 
-    function decimals() external view returns (uint8);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 }
 
 contract TokenFetch {
-    function fetchBalances(address user, IERC20[] calldata tokens)
+    function fetchBalances(address owner, IERC20[] calldata tokens)
         public
         view
-        returns (uint256[] memory, uint256[] memory)
+        returns (uint256[] memory)
     {
         uint256[] memory balances = new uint256[](tokens.length);
-        uint256[] memory decimals = new uint256[](tokens.length);
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            balances[i] = tokens[i].balanceOf(user);
-            decimals[i] = uint256(tokens[i].decimals());
+            balances[i] = tokens[i].balanceOf(owner);
         }
-        return (balances, decimals);
+        return (balances);
+    }
+
+    function fetchAllowances(
+        address owner,
+        address spender,
+        IERC20[] calldata tokens
+    ) public view returns (uint256[] memory) {
+        uint256[] memory allowances = new uint256[](tokens.length);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            allowances[i] = tokens[i].allowance(spender, owner);
+        }
+        return (allowances);
     }
 }
