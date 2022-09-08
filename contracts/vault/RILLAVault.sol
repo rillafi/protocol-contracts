@@ -134,20 +134,15 @@ abstract contract RILLAVault is ERC4626, Ownable {
     //                      VAULT SPECIFIC LOGIC
     // ===============================================================
 
-    function handleWithdrawal(uint256 assets, uint256 shares)
-        internal
-        virtual
-    {}
+    function handleWithdrawal(uint256 assets, uint256 shares) internal virtual;
 
-    function handleDeposit(uint256 assets, uint256 shares) internal virtual {}
+    function handleDeposit(uint256 assets, uint256 shares) internal virtual;
 
-    function handleClaim() internal virtual {}
+    function handleClaim() internal virtual;
 
-    function handleFeesAndAdmin() internal virtual {}
+    function handleFeesAndAdmin() internal virtual;
 
-    function handleCompound() internal virtual {}
-
-    function viewPendingRewards() internal view virtual returns (uint256) {}
+    function viewPendingRewards() internal view virtual returns (uint256);
 
     // function totalAssets()
 }
