@@ -95,6 +95,8 @@ export async function deployLocal() {
   const user = addys[1];
   const admin = addys[2];
   const fees = addys[3];
+  const usdc = "0x7F5c764cBc14f9669B88837ca1490cCa17c31607";
+  const zeroX = "0xdef1abe32c034e558cdd535791643c58a13acc10";
   const velo = "0x3c8B650257cFb5f272f799F5e2b4e65093a11a05";
   const lpVeloUsdcDai = "0x4f7ebc19844259386dbddb7b2eb759eefc6f8353";
   const gaugeVeloUsdcDai = "0xc4ff55a961bc04b880e60219ccbbdd139c6451a4";
@@ -130,6 +132,11 @@ export async function deployLocal() {
         veloRouteVeloUsdc,
       ],
       saveName: "rvsAMM-USDCDAI",
+    },
+    {
+      name: "DonationRouter",
+      args: [admin, fees, ethers.utils.parseEther("0.01"), usdc, zeroX],
+      saveName: "DonationRouter",
     },
   ];
   let deployedInfo: DeployedInfoConfig = {};

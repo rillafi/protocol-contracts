@@ -14,22 +14,19 @@ contract DonationRouter is Ownable {
     address public swap0x;
     uint256 public fee;
     IERC20 public acceptedToken;
-    IWETH public immutable weth;
-    uint256 public constant FEEDIVISOR = 10**6;
+    uint256 public constant FEEDIVISOR = 10**18;
 
     constructor(
         address _charityAddress,
         address _feeAddress,
         uint256 _fee,
         address _acceptedToken,
-        address _weth,
         address _swap0x
     ) {
         charityAddress = _charityAddress;
         feeAddress = _feeAddress;
         fee = _fee;
         acceptedToken = IERC20(_acceptedToken);
-        weth = IWETH(_weth);
         swap0x = _swap0x;
     }
 
