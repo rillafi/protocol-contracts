@@ -4,7 +4,7 @@ import _ from "lodash";
 
 export interface DeployedInfo {
   address: string;
-  abi: Object;
+  abi: any[];
   network: { chainId: number; name: string };
   verified: boolean;
   deployedTransaction: Object;

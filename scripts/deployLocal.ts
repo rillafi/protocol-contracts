@@ -1,27 +1,20 @@
 import { Contract } from "ethers";
 import fs from "fs";
 import path from "path";
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 
-interface DeployedInfoConfig {
-  [contractName: string]: {
-    address: string;
-    abi: Object;
-    network: { chainId: number; name: string };
-    verified: boolean;
-    deployedTransaction: Object;
-    contractName: string;
-    constructorArguments: any[];
-  };
-}
 interface DeployedInfo {
   address: string;
-  abi: Object;
+  abi: any[];
   network: { chainId: number; name: string };
   verified: boolean;
   deployedTransaction: Object;
   contractName: string;
   constructorArguments: any[];
+}
+
+export interface DeployedInfoConfig {
+  [contractName: string]: DeployedInfo;
 }
 
 function saveDeployedInfo(deployedInfo: DeployedInfo, saveName: string) {
@@ -83,7 +76,7 @@ function getArgs(args: any[], deployedInfo: any) {
   return argCopy;
 }
 
-async function deployContract(ethers: any, name: string, args: any[]) {
+async function deployContract(name: string, args: any[]) {
   const contract = await ethers.getContractFactory(name);
   const gasLimit = (
     await ethers.provider.estimateGas(contract.getDeployTransaction(...args))
@@ -94,8 +87,8 @@ async function deployContract(ethers: any, name: string, args: any[]) {
   const deployed = await contract.deploy(...args, { gasLimit, gasPrice });
   return getDeployedInfo(ethers, deployed, name, args);
 }
-async function deployLocal() {
-  const ethers = hre.ethers;
+export async function deployLocal() {
+  console.log("deploying");
   const accounts = await ethers.getSigners();
   const addys = await Promise.all(accounts.map((acc) => acc.getAddress()));
   const deployer = addys[0];
@@ -139,15 +132,15 @@ async function deployLocal() {
       saveName: "rvsAMM-USDCDAI",
     },
   ];
-  if (hre.network.config.chainId !== 31337) throw new Error();
   let deployedInfo: DeployedInfoConfig = {};
   for (const config of contractDeployConfigs) {
     const args = getArgs(config.args, deployedInfo);
-    const deployedConfig = await deployContract(ethers, config.name, args);
+    const deployedConfig = await deployContract(config.name, args);
     deployedInfo[config.name] = deployedConfig;
     saveDeployedInfo(deployedConfig, config.saveName);
   }
 }
 
-deployLocal();
-export default deployLocal;
+if (typeof require !== "undefined" && require.main === module) {
+  deployLocal();
+}
