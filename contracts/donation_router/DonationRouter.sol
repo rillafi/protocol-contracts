@@ -9,7 +9,7 @@ import {console} from "hardhat/console.sol";
 
 contract DonationRouter is Ownable {
     using SafeERC20 for IERC20;
-    address public charityAddress;
+    address public adminAddress;
     address public feeAddress;
     address public swap0x;
     uint256 public fee;
@@ -17,20 +17,30 @@ contract DonationRouter is Ownable {
     uint256 public constant FEEDIVISOR = 10**18;
 
     constructor(
-        address _charityAddress,
-        address _feeAddress,
         uint256 _fee,
         address _acceptedToken,
         address _swap0x
     ) {
-        charityAddress = _charityAddress;
-        feeAddress = _feeAddress;
         fee = _fee;
         acceptedToken = IERC20(_acceptedToken);
         swap0x = _swap0x;
     }
 
-    /// @notice calculates and sends fees to both the fee address and charity addresses
+    /// @notice used to change admin address location on donations
+    /// @param _adminAddress address to change feeAddress to
+    /// @dev run to initialize contract
+    function setAdminAddress(address _adminAddress) external onlyOwner {
+        adminAddress = _adminAddress;
+    }
+
+    /// @notice used to change fee address location on donations
+    /// @param _feeAddress address to change feeAddress to
+    /// @dev run to initialize contract
+    function setFeeAddress(address _feeAddress) external onlyOwner {
+        feeAddress = _feeAddress;
+    }
+
+    /// @notice calculates and sends fees to both the fee address and admin addresses
     /// @dev implemented after all swaps are complete OR if the donating token is the same as acceptedToken
     function _donateAndChargeFees() internal {
         acceptedToken.safeTransfer(
@@ -38,7 +48,7 @@ contract DonationRouter is Ownable {
             (acceptedToken.balanceOf(address(this)) * fee) / FEEDIVISOR
         );
         acceptedToken.safeTransfer(
-            charityAddress,
+            adminAddress,
             acceptedToken.balanceOf(address(this))
         );
     }
