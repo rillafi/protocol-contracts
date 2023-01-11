@@ -1,4 +1,4 @@
-import { DeployedInfo } from "./helpers/helpers";
+import { DeployedInfo } from "./helpers";
 import { DeployedInfoConfig, deployLocal } from "./deployLocal";
 import { Contract } from "ethers";
 import fs from "fs";

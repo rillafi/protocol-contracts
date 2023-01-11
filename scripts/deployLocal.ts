@@ -1,3 +1,4 @@
+import { OPCONFIG } from './config/opConfig';
 import { Contract } from "ethers";
 import fs from "fs";
 import path from "path";
@@ -135,7 +136,7 @@ export async function deployLocal() {
     },
     {
       name: "DonationRouter",
-      args: [admin, fees, ethers.utils.parseEther("0.01"), usdc, zeroX],
+      args: [OPCONFIG.donationFee, OPCONFIG.usdc, OPCONFIG.zeroxProxy],
       saveName: "DonationRouter",
     },
   ];

@@ -23,5 +23,8 @@
     "dotenv": "^16.0.1",
     "hardhat-change-network": "^0.0.7",
     "lodash": "^4.17.21"
+  },
+  "scripts": {
+      "deploc": "npx hardhat run --network localhost scripts/localNodeConfig.ts"
   }
 }

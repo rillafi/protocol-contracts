@@ -2,7 +2,7 @@ import { ethers, Contract } from "ethers";
 import fs from "fs";
 import path from "path";
 
-interface DeployedInfo {
+export interface DeployedInfo {
   address: string;
   abi: any[];
   network: { chainId: number; name: string };
