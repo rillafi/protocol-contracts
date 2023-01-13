@@ -173,7 +173,7 @@ contract CloneFactory is AddressIndex {
     }
 }
 
-contract RillaIndex is CloneFactory {
+contract RillaIndexOld is CloneFactory {
     event LogAccountCreated(
         address sender,
         address indexed owner,
