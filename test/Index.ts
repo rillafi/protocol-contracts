@@ -115,7 +115,7 @@ describe('DAF', function () {
         );
         RillaIndex = await rillaIndex.deploy(
             DafImplementation.address,
-            VeRilla.address,
+            Rilla.address,
             feeAdd
         );
 
@@ -269,35 +269,23 @@ describe('DAF', function () {
         expect((await daf.donations(0)).amount == donationAmount);
     });
     it('Cannot immediately pass a vote', async function () {
+        const balance = ethers.utils.parseEther('10000');
         await Promise.all(
             dafOwnersAddys.map((owner) =>
                 Rilla.connect(deployer).transfer(
                     owner,
-                    ethers.utils.parseEther('10000')
+                    balance
                 )
             )
         );
-        await Promise.all(
-            dafOwners.map((owner) =>
-                Rilla.connect(owner).approve(VeRilla.address, MAXUINT)
-            )
-        );
-        const now = await time.latest();
-        await Promise.all(
-            dafOwners.map((owner) =>
-                VeRilla.connect(owner).create_lock(
-                    ethers.utils.parseEther('10000'),
-                    now + MAXTIME
-                )
-            )
-        );
-        await daf.voteOutDonation(0, ethers.utils.parseEther('9000'));
+        // TODO: Make sure VeRilla is removed completely and tests still work
+        await daf.voteOutDonation(0, balance);
         await expect(daf.fulfillDonation(0)).to.be.reverted;
     });
     it('Cannot immediately pass a vote with > 50% voting power', async function () {
         await Promise.all(
             dafOwners.slice(0, 6).map(async (owner) => {
-                const balance = await VeRilla['balanceOf(address)'](
+                const balance = await Rilla['balanceOf(address)'](
                     await owner.getAddress()
                 );
                 return daf
