@@ -1,6 +1,7 @@
 import { ethers } from 'hardhat';
-import { Signer, Contract } from 'ethers';
+import { Signer, Contract, BigNumber } from 'ethers';
 import { expect } from 'chai';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 function delay(time: number) {
     return new Promise((resolve) => setTimeout(resolve, time));
@@ -16,7 +17,6 @@ describe('Vesting', function () {
     let depAdd: String;
     let userAdd: String;
     let token: Contract;
-    let veToken: Contract;
     let feeDist: Contract;
     let vesting: Contract;
 
@@ -32,25 +32,17 @@ describe('Vesting', function () {
         const Token = await ethers.getContractFactory('RILLA');
         token = await Token.deploy();
 
-        const VeToken = await ethers.getContractFactory('VoteEscrow');
-        veToken = await VeToken.deploy(
-            token.address,
-            'veRILLA',
-            'veRILLA',
-            '1.0'
-        );
-
-        const FeeDist = await ethers.getContractFactory('FeeDistributor');
-        feeDist = await FeeDist.deploy(
-            veToken.address,
-            Math.floor(Date.now() / 1000),
-            token.address,
-            depAdd,
-            depAdd
-        );
+        /* const FeeDist = await ethers.getContractFactory('FeeDistributor'); */
+        /* feeDist = await FeeDist.deploy( */
+        /*     veToken.address, */
+        /*     Math.floor(Date.now() / 1000), */
+        /*     token.address, */
+        /*     depAdd, */
+        /*     depAdd */
+        /* ); */
 
         const Vesting = await ethers.getContractFactory('TokenVesting');
-        vesting = await Vesting.deploy(token.address, veToken.address);
+        vesting = await Vesting.deploy(token.address);
     });
 
     it('Vesting: tokens must be in contract first', async function () {
@@ -86,11 +78,12 @@ describe('Vesting', function () {
     });
 
     it('Vesting: vest successfully created', async function () {
+        const duration = 4 * 365 * 86400;
         await vesting.functions.createVestingSchedule(
             userAdd,
             Math.floor(Date.now() / 1000),
             0,
-            100,
+            duration,
             1,
             false,
             ethers.BigNumber.from('1000000' + '0'.repeat(18))
@@ -98,12 +91,13 @@ describe('Vesting', function () {
     });
 
     it("Vesting: doesn't overallocate tokens in vesting contract", async function () {
+        const duration = 4 * 365 * 86400;
         await expect(
             vesting.functions.createVestingSchedule(
                 userAdd,
                 Math.floor(Date.now() / 1000),
                 0,
-                100,
+                duration,
                 1,
                 false,
                 ethers.BigNumber.from('1000000' + '0'.repeat(18))
@@ -117,11 +111,12 @@ describe('Vesting', function () {
             ethers.BigNumber.from('1000000' + '0'.repeat(19))
         );
         for (const addy of addys.slice(2, 12)) {
+            const duration = 4 * 365 * 86400;
             vesting.functions.createVestingSchedule(
                 addy,
                 Math.floor(Date.now() / 1000),
                 0,
-                1000,
+                duration,
                 1,
                 false,
                 ethers.BigNumber.from('1000000' + '0'.repeat(18))
@@ -136,17 +131,10 @@ describe('Vesting', function () {
                 0
             );
         const id = _id[0];
-        const prevAmount = await vesting.computeReleasableAmount(id);
-        await delay(2000);
-        await token.transfer(addys[0], 1); // do a transaction to create new blocks and advance time onchain
-        const curAmount = await vesting.computeReleasableAmount(id);
-        console.log(
-            Number(ethers.utils.formatEther(prevAmount)),
-            Number(ethers.utils.formatEther(curAmount))
-        );
-        expect(Number(ethers.utils.formatEther(prevAmount))).to.be.lessThan(
-            Number(ethers.utils.formatEther(curAmount))
-        );
+        const prevAmount: BigNumber = await vesting.computeReleasableAmount(id);
+        await time.increase(2*365*86400);
+        const curAmount: BigNumber = await vesting.computeReleasableAmount(id);
+        expect(curAmount.gt(prevAmount))
     });
 
     it('Vesting: releases tokens', async function () {
@@ -157,16 +145,12 @@ describe('Vesting', function () {
             );
         const id = _id[0];
 
-        const curAmount = await vesting.computeReleasableAmount(id);
-        const prevBal = await token.balanceOf(addys[2]);
+        const curAmount: BigNumber = await vesting.computeReleasableAmount(id);
+        const prevBal: BigNumber = await token.balanceOf(addys[2]);
         await vesting.connect(accounts[2]).release(id, curAmount);
-        const curBal = await token.balanceOf(addys[2]);
-        expect(Number(ethers.utils.formatEther(prevBal))).to.be.lessThan(
-            Number(ethers.utils.formatEther(curBal))
-        );
-        expect(Number(ethers.utils.formatEther(curAmount))).to.be.equal(
-            Number(ethers.utils.formatEther(curBal))
-        );
+        const curBal: BigNumber = await token.balanceOf(addys[2]);
+        expect(curBal.gt(prevBal));
+        expect(curAmount.eq(curBal));
     });
 
     it('Vesting: does not release tokens to an incorrect account', async function () {
