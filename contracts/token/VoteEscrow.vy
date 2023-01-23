@@ -422,7 +422,7 @@ def create_lock(_value: uint256, _unlock_time: uint256):
     assert _value > 0  # dev: need non-zero value
     assert _locked.amount == 0, "Withdraw old tokens first"
     assert unlock_time > block.timestamp, "Can only lock until time in the future"
-    assert unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 4 years max"
+    assert unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 2 years max"
 
     self._deposit_for(msg.sender, _value, unlock_time, _locked, CREATE_LOCK_TYPE)
 
@@ -459,7 +459,7 @@ def increase_unlock_time(_unlock_time: uint256):
     assert _locked.end > block.timestamp, "Lock expired"
     assert _locked.amount > 0, "Nothing is locked"
     assert unlock_time > _locked.end, "Can only increase lock duration"
-    assert unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 4 years max"
+    assert unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 2 years max"
 
     self._deposit_for(msg.sender, 0, unlock_time, _locked, INCREASE_UNLOCK_TIME)
 
