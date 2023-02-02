@@ -4,6 +4,7 @@ import "@nomiclabs/hardhat-vyper";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-change-network";
+import "hardhat-contract-sizer";
 import dotenv from "dotenv";
 // import "./tasks/deploy";
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -30,7 +31,7 @@ export default {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000,
+        runs: 9999,
       },
     },
   },

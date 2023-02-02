@@ -1,4 +1,4 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -44,10 +44,11 @@ contract RillaIndex is Ownable {
     uint256 public numDAFs;
     // state vars with setters
     address public dafImplementation;
-    address public veRilla;
+    address public rilla;
     address public feeAddress;
     uint256 public feeOutBps = 100;
     uint256 public feeInBps = 100;
+    uint256 public feeSwapBps = 100;
     uint256 public waitTime = 1 weeks;
     uint256 public interimWaitTime = 1 days;
     uint256 public expireTime = 3 weeks;
@@ -55,12 +56,12 @@ contract RillaIndex is Ownable {
 
     constructor(
         address _dafImplementation,
-        address _veRilla,
+        address _rilla,
         address _feeAddress
     ) {
         dafImplementation = _dafImplementation;
         feeAddress = _feeAddress;
-        veRilla = _veRilla;
+        rilla = _rilla;
     }
 
     // ======================================================
@@ -168,14 +169,18 @@ contract RillaIndex is Ownable {
 
     /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
     /// @return fee percent, max value is 10_000 (1e4)
-    function getOutFeeBps() external view returns (uint256) {
+    function getFeeOutBps() external view returns (uint256) {
         return feeOutBps;
     }
 
     /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
     /// @return fee percent, max value is 10_000 (1e4)
-    function getInFeeBps() external view returns (uint256) {
+    function getFeeInBps() external view returns (uint256) {
         return feeInBps;
+    }
+
+    function getFeeSwapBps() external view returns (uint256) {
+        return feeSwapBps;
     }
 
     function getWaitTime() external view returns (uint256) {
@@ -186,17 +191,18 @@ contract RillaIndex is Ownable {
         return interimWaitTime;
     }
 
-
     function getExpireTime() external view returns (uint256) {
         return expireTime;
     }
+
     function getVoteMin() external view returns (uint256) {
         return rillaVoteMin;
     }
 
-    function getVeRillaAddress() external view returns (address) {
-        return veRilla;
+    function getRillaAddress() external view returns (address) {
+        return rilla;
     }
+
     function isAcceptedEIN(uint256 EIN) external view returns (bool) {
         return charities[EIN];
     }
@@ -205,8 +211,8 @@ contract RillaIndex is Ownable {
         dafImplementation = _daf;
     }
 
-    function setVeRilla(address _veRilla) public onlyOwner {
-        veRilla = _veRilla;
+    function setRilla(address _rilla) public onlyOwner {
+        rilla = _rilla;
     }
 
     function setFeeAddress(address _feeAddress) public onlyOwner {
@@ -214,11 +220,18 @@ contract RillaIndex is Ownable {
     }
 
     function setFeeOutBps(uint256 _feeOutBps) public onlyOwner {
+        require(_feeOutBps <= 10000);
         feeOutBps = _feeOutBps;
     }
 
     function setFeeInBps(uint256 _feeInBps) public onlyOwner {
+        require(_feeInBps <= 10000);
         feeInBps = _feeInBps;
+    }
+
+    function setFeeSwapBps(uint256 _feeSwapBps) public onlyOwner {
+        require(_feeSwapBps <= 10000);
+        feeSwapBps = _feeSwapBps;
     }
 
     function setWaitTime(uint256 _waitTime) public onlyOwner {
@@ -232,6 +245,7 @@ contract RillaIndex is Ownable {
     function setExpireTime(uint256 _time) public onlyOwner {
         expireTime = _time;
     }
+
     function setRillaVoteMin(uint256 _rillaVoteMin) public onlyOwner {
         rillaVoteMin = _rillaVoteMin;
     }

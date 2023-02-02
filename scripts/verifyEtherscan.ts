@@ -3,21 +3,6 @@ import fs from "fs";
 import path from "path";
 import { DeployedInfo, saveDeployedInfo } from "./helpers/helpers";
 
-function getAllFiles(dirPath: string, arrayOfFiles: string[]) {
-  const files = fs.readdirSync(dirPath);
-
-  arrayOfFiles = arrayOfFiles || [];
-
-  files.forEach(function (file) {
-    if (fs.statSync(dirPath + "/" + file).isDirectory()) {
-      arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
-    } else {
-      arrayOfFiles.push(path.join(__dirname, dirPath, "/", file));
-    }
-  });
-
-  return arrayOfFiles;
-}
 async function verifyEtherscanAndSave(
   allContracts: string[],
   deployedInfo: DeployedInfo,
@@ -58,39 +43,44 @@ async function verifyEtherscanAndSave(
 }
 
 async function main() {
-  const chains = fs.readdirSync(path.join(__dirname, "../deployed_contracts"));
-  const allContracts = getAllFiles(path.join(__dirname, "../contracts"), []);
-  for (const chain of chains) {
-    if (chain === "31337") continue;
-    const contracts = fs.readdirSync(
-      path.join(__dirname, `../deployed_contracts/${chain}`)
-    );
-    for (const contract of contracts) {
-      const contractName = contract.replace(".json", "");
-      const deployedInfo: DeployedInfo = JSON.parse(
-        fs
-          .readFileSync(
-            path.join(
-              __dirname,
-              `../deployed_contracts/${chain}/${contractName}.json`
-            )
-          )
-          .toString()
-      );
-      if (!deployedInfo.verified) {
-        if (hre.network.name !== deployedInfo.network.name)
-          hre.changeNetwork(deployedInfo.network.name);
-        console.log(deployedInfo.address);
-        await verifyEtherscanAndSave(
-          allContracts,
-          deployedInfo,
-          contractName,
-          deployedInfo.constructorArguments
-        );
-      }
-    }
-  }
-  process.exit(0);
+  /* const chains = fs.readdirSync(path.join(__dirname, "../deployed_contracts")); */
+  /* const allContracts = getAllFiles(path.join(__dirname, "../contracts"), []); */
+  /* for (const chain of chains) { */
+  /*   if (chain === "31337") continue; */
+  /*   const contracts = fs.readdirSync( */
+  /*     path.join(__dirname, `../deployed_contracts/${chain}`) */
+  /*   ); */
+  /*   for (const contract of contracts) { */
+  /*     const contractName = contract.replace(".json", ""); */
+  /*     const deployedInfo: DeployedInfo = JSON.parse( */
+  /*       fs */
+  /*         .readFileSync( */
+  /*           path.join( */
+  /*             __dirname, */
+  /*             `../deployed_contracts/${chain}/${contractName}.json` */
+  /*           ) */
+  /*         ) */
+  /*         .toString() */
+  /*     ); */
+  /*     if (!deployedInfo.verified) { */
+  /*       if (hre.network.name !== deployedInfo.network.name) */
+  /*         hre.changeNetwork(deployedInfo.network.name); */
+  /*       console.log(deployedInfo.address); */
+  /*       await verifyEtherscanAndSave( */
+  /*         allContracts, */
+  /*         deployedInfo, */
+  /*         contractName, */
+  /*         deployedInfo.constructorArguments */
+  /*       ); */
+  /*     } */
+  /*   } */
+  /* } */
+  /* process.exit(0); */
+    await hre.run("verify:verify", {
+      address: "",
+      constructorArguments: "0x96D17e1301b31556e5e263389583A9331e6749E9",
+      contract: "TokenVesting",
+    });
 }
 
 main();
