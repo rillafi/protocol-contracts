@@ -31,8 +31,7 @@ interface IRillaIndex {
     function isAcceptedEIN(uint256 EIN) external view returns (bool);
 }
 
-// TODO: Create dafAssets mapping
-// TODO: Create function to reconcile balances caused by transferring token directly to DAF
+// TODO: change requires for a DAF with 1 owner so there is no wait time
 contract DAFImplementation {
     using SafeERC20 for IERC20;
     string public name;
