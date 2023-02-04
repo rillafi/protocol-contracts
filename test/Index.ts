@@ -21,17 +21,18 @@ describe('DAF', function () {
     let DafImplementation: Contract;
     let RillaIndex: Contract;
     let Rilla: Contract;
-    let VeRilla: Contract;
+    /* let VeRilla: Contract; */
     let accounts: Signer[];
     let addys: String[];
     let deployer: Signer;
     let user: Signer;
-    let feeAcc: Signer;
-    let depAdd: String;
     let userAdd: String;
+    let feeAcc: Signer;
     let feeAdd: String;
+    let treasury: Signer;
+    let treasuryAdd: String;
     let depositor: Signer;
-    let depositorAdd: String;
+    let depAdd: String;
     let daf: Contract;
     let usdcRichAdd: string = '0xEbe80f029b1c02862B9E8a70a7e5317C06F62Cae';
     let usdcRich: Signer;
@@ -95,13 +96,13 @@ describe('DAF', function () {
         let rilla = await ethers.getContractFactory('RILLA', deployer);
         Rilla = await rilla.deploy();
 
-        let veRilla = await ethers.getContractFactory('VoteEscrow', deployer);
-        VeRilla = await veRilla.deploy(
-            Rilla.address,
-            'VeRilla',
-            'veRILLA',
-            '1.0'
-        );
+        /* let veRilla = await ethers.getContractFactory('VoteEscrow', deployer); */
+        /* VeRilla = await veRilla.deploy( */
+        /*     Rilla.address, */
+        /*     'VeRilla', */
+        /*     'veRILLA', */
+        /*     '1.0' */
+        /* ); */
 
         let dafImplementation = await ethers.getContractFactory(
             'DAFImplementation',
@@ -116,7 +117,9 @@ describe('DAF', function () {
         RillaIndex = await rillaIndex.deploy(
             DafImplementation.address,
             Rilla.address,
-            feeAdd
+            feeAdd,
+            treasuryAdd,
+            BigNumber.from(1e10) // 1 cent swap rate
         );
 
         // addys 0-9 deposit around 1000 veRILLA
@@ -132,7 +135,7 @@ describe('DAF', function () {
             RillaIndex.interface.parseLog(receipt.events[0]).args.newDafAddress
         );
         const ownersDAFs = await RillaIndex.functions.getDAFsForOwner(addys[0]);
-        expect(ownersDAFs == [daf.address]);
+        expect(ownersDAFs[0] == daf.address);
     });
 
     /* it('Prints name of new DAF', async function () { */
@@ -319,4 +322,5 @@ describe('DAF', function () {
     it('Can create a vote to remove an owner', async function () {});
     it('Can fail a vote to remove an owner', async function () {});
     it('Can pass a vote to remove an owner', async function () {});
+    // TODO: MORE TESTING
 });

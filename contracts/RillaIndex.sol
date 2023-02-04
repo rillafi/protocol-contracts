@@ -43,12 +43,15 @@ contract RillaIndex is Ownable {
     uint256 public numUnfulfilled; // number of donations where fulfilled is false
     uint256 public numDAFs;
     // state vars with setters
+    bool public isRillaSwapLive = true;
     address public dafImplementation;
     address public rilla;
+    address public treasury;
     address public feeAddress;
     uint256 public feeOutBps = 100;
     uint256 public feeInBps = 100;
     uint256 public feeSwapBps = 100;
+    uint256 public rillaSwapRate;
     uint256 public waitTime = 1 weeks;
     uint256 public interimWaitTime = 1 days;
     uint256 public expireTime = 3 weeks;
@@ -57,11 +60,15 @@ contract RillaIndex is Ownable {
     constructor(
         address _dafImplementation,
         address _rilla,
-        address _feeAddress
+        address _feeAddress,
+        address _treasury,
+        uint256 _rillaSwapRate
     ) {
         dafImplementation = _dafImplementation;
         feeAddress = _feeAddress;
         rilla = _rilla;
+        treasury = _treasury;
+        rillaSwapRate = _rillaSwapRate;
     }
 
     // ======================================================
@@ -203,6 +210,10 @@ contract RillaIndex is Ownable {
         return rilla;
     }
 
+    function getTreasuryAddress() external view returns (address) {
+        return treasury;
+    }
+
     function isAcceptedEIN(uint256 EIN) external view returns (bool) {
         return charities[EIN];
     }
@@ -211,8 +222,20 @@ contract RillaIndex is Ownable {
         dafImplementation = _daf;
     }
 
-    function setRilla(address _rilla) public onlyOwner {
+    function setRillaAddress(address _rilla) public onlyOwner {
         rilla = _rilla;
+    }
+
+    function setRillaSwapRate(uint256 _rillaSwapRate) public onlyOwner {
+        rillaSwapRate = _rillaSwapRate;
+    }
+
+    function setRillaSwapLive(bool val) public onlyOwner {
+        isRillaSwapLive = val;
+    }
+
+    function setTreasuryAddress(address _treasury) public onlyOwner {
+        treasury = _treasury;
     }
 
     function setFeeAddress(address _feeAddress) public onlyOwner {

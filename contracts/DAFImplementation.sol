@@ -26,6 +26,12 @@ interface IRillaIndex {
 
     function getRillaAddress() external view returns (address);
 
+    function getRillaSwapRate() external view returns (uint256);
+
+    function getTreasuryAddress() external view returns (address);
+
+    function isRillaSwapLive() external view returns (bool);
+
     function createDonation(uint256 amount, uint256 EIN) external;
 
     function isAcceptedEIN(uint256 EIN) external view returns (bool);
@@ -46,6 +52,7 @@ contract DAFImplementation {
     // ============== STATE VARS WITH SETTER ===================
     // =========================================================
     address public rillaIndex;
+    address public treasuryAddress;
 
     // =========================================================
     // ===================== CONSTANTS =========================
@@ -82,11 +89,15 @@ contract DAFImplementation {
     // =======================================================================
     // ===================== PUBLIC VIEW FUNCTIONS ===========================
     // =======================================================================
-    function getAvailableFunds() public view returns (address[] memory, uint256[] memory) {
-        uint length = availableTokens.length;
+    function getAvailableFunds()
+        public
+        view
+        returns (address[] memory, uint256[] memory)
+    {
+        uint256 length = availableTokens.length;
         address[] memory tokens = new address[](length);
-        uint[] memory balances = new uint[](length);
-        for (uint i = 0; i < length; ++i) {
+        uint256[] memory balances = new uint256[](length);
+        for (uint256 i = 0; i < length; ++i) {
             tokens[i] = availableTokens[i];
             balances[i] = availableFunds[tokens[i]];
         }
@@ -508,6 +519,19 @@ contract DAFImplementation {
         SWAP
     }
 
+    function swapRilla(uint256 amount) internal {
+        IERC20(usdc).safeTransfer(
+            IRillaIndex(rillaIndex).getFeeAddress(),
+            amount
+        );
+        uint256 swapRate = IRillaIndex(rillaIndex).getRillaSwapRate(); // RILLA per USDC. $1 / RILLA would be 1e12, $0.01 would be 1e10
+        IERC20(IRillaIndex(rillaIndex).getRillaAddress()).safeTransferFrom(
+            IRillaIndex(rillaIndex).getTreasuryAddress(),
+            msg.sender,
+            amount * swapRate
+        );
+    }
+
     function chargeFee(
         address token,
         uint256 totalAmount,
@@ -526,10 +550,17 @@ contract DAFImplementation {
 
         uint256 amount = (totalAmount * fee) / BPS;
         if (token == usdc) {
-            IERC20(usdc).safeTransfer(
-                IRillaIndex(rillaIndex).getFeeAddress(),
-                amount
-            );
+            if (
+                feeType == FeeType.IN &&
+                IRillaIndex(rillaIndex).isRillaSwapLive()
+            ) {
+                swapRilla(amount);
+            } else {
+                IERC20(usdc).safeTransfer(
+                    IRillaIndex(rillaIndex).getFeeAddress(),
+                    amount
+                );
+            }
             return amount;
         }
         uint256 usdcPrevBal = IERC20(usdc).balanceOf(address(this));
@@ -539,10 +570,16 @@ contract DAFImplementation {
 
         uint256 usdcCurBal = IERC20(usdc).balanceOf(address(this));
         require(usdcCurBal - usdcPrevBal > 0, "0x route invalid");
-        IERC20(usdc).safeTransfer(
-            IRillaIndex(rillaIndex).getFeeAddress(),
-            usdcCurBal - usdcPrevBal
-        );
+        if (
+            feeType == FeeType.IN && IRillaIndex(rillaIndex).isRillaSwapLive()
+        ) {
+            swapRilla(amount);
+        } else {
+            IERC20(usdc).safeTransfer(
+                IRillaIndex(rillaIndex).getFeeAddress(),
+                usdcCurBal - usdcPrevBal
+            );
+        }
         return usdcCurBal - usdcPrevBal;
     }
 
