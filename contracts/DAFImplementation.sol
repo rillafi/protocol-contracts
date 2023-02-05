@@ -1,40 +1,42 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IWETH} from "./interfaces/WETH/IWETH.sol";
-import {console} from "hardhat/console.sol";
 
 interface IRillaIndex {
-    function getFeeAddress() external view returns (address);
+    function feeAddress() external view returns (address);
 
-    function getFeeOutBps() external view returns (uint256);
+    function feeOutBps() external view returns (uint256);
 
-    function getFeeInBps() external view returns (uint256);
+    function feeInBps() external view returns (uint256);
 
-    function getFeeSwapBps() external view returns (uint256);
+    function feeSwapBps() external view returns (uint256);
 
-    function getWaitTime() external view returns (uint256);
+    function waitTime() external view returns (uint256);
 
-    function getInterimWaitTime() external view returns (uint256);
+    function interimWaitTime() external view returns (uint256);
 
-    function getExpireTime() external view returns (uint256);
+    function expireTime() external view returns (uint256);
 
-    function getVoteMin() external view returns (uint256);
+    function rillaVoteMin() external view returns (uint256);
 
-    function getRillaAddress() external view returns (address);
+    function rilla() external view returns (address);
 
-    function getRillaSwapRate() external view returns (uint256);
+    function rillaSwapRate() external view returns (uint256);
 
-    function getTreasuryAddress() external view returns (address);
+    function treasury() external view returns (address);
 
     function isRillaSwapLive() external view returns (bool);
 
+    function isAcceptedEIN(uint256 EIN) external view returns (bool);
+
     function createDonation(uint256 amount, uint256 EIN) external;
 
-    function isAcceptedEIN(uint256 EIN) external view returns (bool);
+    function swapRilla(address sender, uint256 amount) external;
 }
 
 // TODO: change requires for a DAF with 1 owner so there is no wait time
@@ -141,21 +143,8 @@ contract DAFImplementation {
         return x >= 0 ? x : -x;
     }
 
-    function changeFundsAvailable(
-        address token,
-        uint256 amount,
-        bool increase
-    ) public {
-        require(
-            IERC20(token).balanceOf(address(this)) ==
-                (
-                    increase
-                        ? availableFunds[token] + amount
-                        : availableFunds[token] - amount
-                ),
-            "Token amount incorrect"
-        );
-        availableFunds[token] += amount;
+    function updateFundsAvailable(address token) public {
+        availableFunds[token] = IERC20(token).balanceOf(address(this));
     }
 
     function donateToDaf(
@@ -168,14 +157,14 @@ contract DAFImplementation {
         if (availableFunds[token] == 0) {
             availableTokens.push(token);
         }
-        changeFundsAvailable(token, amount, true);
+        updateFundsAvailable(token);
         emit DonationIn(token, amount);
     }
 
     function donateEthToDaf(bytes calldata swapCallData) public payable {
         IWETH(weth).deposit{value: msg.value}();
         chargeFee(weth, msg.value, FeeType.IN, swapCallData);
-        changeFundsAvailable(weth, msg.value, true);
+        updateFundsAvailable(weth);
         emit DonationIn(weth, msg.value);
     }
 
@@ -249,8 +238,9 @@ contract DAFImplementation {
         onlyRillaHolder(vote)
         onlyUnfinalizedVote(id, voteType)
     {
-        uint256 balance = IERC20(IRillaIndex(rillaIndex).getRillaAddress())
-            .balanceOf(msg.sender);
+        uint256 balance = IERC20(IRillaIndex(rillaIndex).rilla()).balanceOf(
+            msg.sender
+        );
         if (abs(int256(balance)) > vote) {
             // set to max voting power if not enough
             vote = vote > 0 ? int256(balance) : -int256(balance);
@@ -308,7 +298,7 @@ contract DAFImplementation {
         ) {
             passing =
                 block.timestamp >=
-                createTime + IRillaIndex(rillaIndex).getInterimWaitTime();
+                createTime + IRillaIndex(rillaIndex).interimWaitTime();
             errorMessage = "Must allow the interim wait time before fulfilling vote";
             // require(
             //     block.timestamp >=
@@ -328,12 +318,11 @@ contract DAFImplementation {
             // revert("Vote failed.");
         } else if (
             voteResult > 0 &&
-            block.timestamp <
-            createTime + IRillaIndex(rillaIndex).getExpireTime()
+            block.timestamp < createTime + IRillaIndex(rillaIndex).expireTime()
         ) {
             passing =
                 block.timestamp >=
-                createTime + IRillaIndex(rillaIndex).getWaitTime();
+                createTime + IRillaIndex(rillaIndex).waitTime();
             errorMessage = "Must allow the wait time if voting power < 50%";
             // require(
             //     block.timestamp >=
@@ -361,8 +350,9 @@ contract DAFImplementation {
             finalized = swaps[id].finalized;
         }
         return
-            block.timestamp >=
-            createTime + IRillaIndex(rillaIndex).getExpireTime() &&
+            block.timestamp >= createTime &&
+            createTime <
+            block.timestamp + IRillaIndex(rillaIndex).expireTime() &&
             !finalized;
     }
 
@@ -388,8 +378,9 @@ contract DAFImplementation {
         uint256[] memory votingPower = new uint256[](owners.length);
         uint256 votingPowerSum;
         for (uint256 i = 0; i < owners.length; ++i) {
-            votingPower[i] = IERC20(IRillaIndex(rillaIndex).getRillaAddress())
-                .balanceOf(owners[i]);
+            votingPower[i] = IERC20(IRillaIndex(rillaIndex).rilla()).balanceOf(
+                owners[i]
+            );
             votingPowerSum += votingPower[i];
             voteResult += votes[owners[i]];
             votePowerUsed += uint256(abs(votes[owners[i]]));
@@ -424,7 +415,7 @@ contract DAFImplementation {
         IERC20(usdc).safeTransfer(rillaIndex, donation.amount - outFee);
         // bookkeeping
         donation.finalized = true;
-        changeFundsAvailable(usdc, donation.amount, false);
+        updateFundsAvailable(usdc);
 
         // log in index
         IRillaIndex(rillaIndex).createDonation(
@@ -480,7 +471,7 @@ contract DAFImplementation {
         Swap storage swap = swaps[swapId];
 
         // check for expired status
-        require(isVoteActive(swapId, VoteType.OWNERCHANGE), "Vote expired.");
+        require(isVoteActive(swapId, VoteType.SWAP), "Vote expired.");
         (bool passing, string memory errorMessage) = (
             voteIsPassing(swap.votes, swap.createTime)
         );
@@ -488,7 +479,7 @@ contract DAFImplementation {
 
         require(availableFunds[swap.from] >= swap.amount);
         // get balances
-        uint256 prevFrom = IERC20(swap.from).balanceOf(address(this));
+        // uint256 prevFrom = IERC20(swap.from).balanceOf(address(this));
         uint256 prevTo = IERC20(swap.to).balanceOf(address(this));
         // execute swap
         executeSwap0x(swap.from, swap.amount, swapCallData);
@@ -497,15 +488,15 @@ contract DAFImplementation {
         chargeFee(swap.to, newTo - prevTo, FeeType.SWAP, swapCallDataFee);
 
         // get new balances
-        uint256 curFrom = IERC20(swap.from).balanceOf(address(this));
-        uint256 curTo = IERC20(swap.to).balanceOf(address(this));
+        // uint256 curFrom = IERC20(swap.from).balanceOf(address(this));
+        // uint256 curTo = IERC20(swap.to).balanceOf(address(this));
 
         // book keeping
-        changeFundsAvailable(swap.from, curFrom - prevFrom, false);
         if (availableFunds[swap.to] == 0) {
             availableTokens.push(swap.to);
         }
-        changeFundsAvailable(swap.to, curTo - prevTo, true);
+        updateFundsAvailable(swap.from);
+        updateFundsAvailable(swap.to);
 
         emit DafSwap(swap.from, swap.to, swap.amount);
     }
@@ -519,19 +510,6 @@ contract DAFImplementation {
         SWAP
     }
 
-    function swapRilla(uint256 amount) internal {
-        IERC20(usdc).safeTransfer(
-            IRillaIndex(rillaIndex).getFeeAddress(),
-            amount
-        );
-        uint256 swapRate = IRillaIndex(rillaIndex).getRillaSwapRate(); // RILLA per USDC. $1 / RILLA would be 1e12, $0.01 would be 1e10
-        IERC20(IRillaIndex(rillaIndex).getRillaAddress()).safeTransferFrom(
-            IRillaIndex(rillaIndex).getTreasuryAddress(),
-            msg.sender,
-            amount * swapRate
-        );
-    }
-
     function chargeFee(
         address token,
         uint256 totalAmount,
@@ -541,26 +519,22 @@ contract DAFImplementation {
         // calculate token fee
         uint256 fee;
         if (feeType == FeeType.IN) {
-            fee = IRillaIndex(rillaIndex).getFeeInBps();
+            fee = IRillaIndex(rillaIndex).feeInBps();
         } else if (feeType == FeeType.OUT) {
-            fee = IRillaIndex(rillaIndex).getFeeOutBps();
+            fee = IRillaIndex(rillaIndex).feeOutBps();
         } else if (feeType == FeeType.SWAP) {
-            fee = IRillaIndex(rillaIndex).getFeeSwapBps();
+            fee = IRillaIndex(rillaIndex).feeSwapBps();
         }
 
         uint256 amount = (totalAmount * fee) / BPS;
         if (token == usdc) {
-            if (
-                feeType == FeeType.IN &&
-                IRillaIndex(rillaIndex).isRillaSwapLive()
-            ) {
-                swapRilla(amount);
-            } else {
-                IERC20(usdc).safeTransfer(
-                    IRillaIndex(rillaIndex).getFeeAddress(),
-                    amount
-                );
+            if (feeType == FeeType.IN) {
+                IRillaIndex(rillaIndex).swapRilla(msg.sender, amount);
             }
+            IERC20(usdc).safeTransfer(
+                IRillaIndex(rillaIndex).feeAddress(),
+                amount
+            );
             return amount;
         }
         uint256 usdcPrevBal = IERC20(usdc).balanceOf(address(this));
@@ -570,13 +544,13 @@ contract DAFImplementation {
 
         uint256 usdcCurBal = IERC20(usdc).balanceOf(address(this));
         require(usdcCurBal - usdcPrevBal > 0, "0x route invalid");
-        if (
-            feeType == FeeType.IN && IRillaIndex(rillaIndex).isRillaSwapLive()
-        ) {
-            swapRilla(amount);
-        } else {
-            IERC20(usdc).safeTransfer(
-                IRillaIndex(rillaIndex).getFeeAddress(),
+        IERC20(usdc).safeTransfer(
+            IRillaIndex(rillaIndex).feeAddress(),
+            usdcCurBal - usdcPrevBal
+        );
+        if (feeType == FeeType.IN) {
+            IRillaIndex(rillaIndex).swapRilla(
+                msg.sender,
                 usdcCurBal - usdcPrevBal
             );
         }
@@ -594,34 +568,29 @@ contract DAFImplementation {
         bool finalized;
     }
 
-    // Only for viewing
-    // TODO: Test this
     function fetchActiveDonations()
         external
         view
-        returns (ViewDonations[] memory)
+        returns (ViewDonations[] memory, uint256)
     {
         uint256 length = donations.length;
         ViewDonations[] memory votes = new ViewDonations[](length);
         uint256 head = 0;
-        for (
-            uint256 i = length - 1;
-            (length < 50 && i >= 0) || (length >= 50 && i >= length - 50);
-            --i
-        ) {
+        bool lenOver50 = length > 50;
+        for (uint256 i = length; lenOver50 ? i > length - 50 : i > 0; i--) {
             // only grab last 50 max
-            if (isVoteActive(i, VoteType.DONATION)) {
+            uint256 idx = i - 1;
+            if (isVoteActive(idx, VoteType.DONATION)) {
                 ViewDonations memory vote = votes[head];
-                vote.id = i;
-                vote.amount = donations[i].amount;
-                vote.EIN = donations[i].EIN;
-                vote.createTime = donations[i].createTime;
-                vote.finalized = donations[i].finalized;
-                // votes[head] = vote;
+                vote.id = idx;
+                vote.amount = donations[idx].amount;
+                vote.EIN = donations[idx].EIN;
+                vote.createTime = donations[idx].createTime;
+                vote.finalized = donations[idx].finalized;
                 head++;
             }
         }
-        return votes;
+        return (votes, head);
     }
 
     struct ViewOwnerVotes {
@@ -632,34 +601,28 @@ contract DAFImplementation {
     }
 
     // Only for viewing
-    // TODO: Test this
     function fetchActiveOwnerChanges()
         external
         view
-        returns (ViewOwnerVotes[] memory)
+        returns (ViewOwnerVotes[] memory, uint256)
     {
-        ViewOwnerVotes[] memory votes = new ViewOwnerVotes[](
-            ownerChanges.length
-        );
-        uint256 head = 0;
         uint256 length = ownerChanges.length;
-        for (
-            uint256 i = length - 1;
-            (length < 50 && i >= 0) || (length >= 50 && i >= length - 50);
-            --i
-        ) {
+        ViewOwnerVotes[] memory votes = new ViewOwnerVotes[](length);
+        uint256 head = 0;
+        bool lenOver50 = length > 50;
+        for (uint256 i = length - 1; lenOver50 ? i > length - 50 : i > 0; --i) {
             // only grab last 50 max
-            if (isVoteActive(i, VoteType.OWNERCHANGE)) {
+            uint256 idx = i - 1;
+            if (isVoteActive(idx, VoteType.OWNERCHANGE)) {
                 ViewOwnerVotes memory vote = votes[head];
-                vote.id = i;
-                vote.add = ownerChanges[i].add;
-                vote.finalized = ownerChanges[i].finalized;
-                vote.owners = ownerChanges[i].owners;
-                // votes[head] = vote;
+                vote.id = idx;
+                vote.add = ownerChanges[idx].add;
+                vote.finalized = ownerChanges[idx].finalized;
+                vote.owners = ownerChanges[idx].owners;
                 head++;
             }
         }
-        return votes;
+        return (votes, head);
     }
 
     struct ViewSwaps {
@@ -675,33 +638,45 @@ contract DAFImplementation {
     }
 
     // Only for viewing
-    // TODO: Test this, line 18 down might need to be uncommented
-    function fetchActiveSwaps() external view returns (ViewSwaps[] memory) {
-        ViewSwaps[] memory viewSwaps = new ViewSwaps[](ownerChanges.length);
+    function fetchActiveSwaps()
+        external
+        view
+        returns (ViewSwaps[] memory, uint256)
+    {
+        ViewSwaps[] memory viewSwaps = new ViewSwaps[](swaps.length);
         uint256 head = 0;
-        uint256 length = ownerChanges.length;
-        for (
-            uint256 i = length - 1;
-            (length < 50 && i >= 0) || (length >= 50 && i >= length - 50);
-            --i
-        ) {
+        uint256 length = swaps.length;
+        bool lenOver50 = length > 50;
+        for (uint256 i = length; lenOver50 ? i > length - 50 : i > 0; i--) {
+            uint256 idx = i - 1;
             // only grab last 50 max
-            if (isVoteActive(i, VoteType.SWAP)) {
+            if (isVoteActive(idx, VoteType.SWAP)) {
                 ViewSwaps memory swap = viewSwaps[head];
-                swap.id = i;
-                swap.finalized = swaps[i].finalized;
-                swap.amount = swaps[i].amount;
-                swap.from = swaps[i].from;
-                swap.to = swaps[i].to;
+                swap.id = idx;
+                swap.finalized = swaps[idx].finalized;
+                swap.amount = swaps[idx].amount;
+                swap.from = swaps[idx].from;
+                swap.to = swaps[idx].to;
                 swap.toSymbol = IERC20Metadata(swap.to).symbol();
                 swap.toDecimals = IERC20Metadata(swap.to).decimals();
                 swap.fromSymbol = IERC20Metadata(swap.from).symbol();
                 swap.fromDecimals = IERC20Metadata(swap.from).decimals();
-                // viewSwaps[head] = swap;
                 head++;
             }
         }
-        return viewSwaps;
+        return (viewSwaps, head);
+    }
+
+    function getSwapsLength() external view returns (uint256) {
+        return swaps.length;
+    }
+
+    function getDonationsLength() external view returns (uint256) {
+        return donations.length;
+    }
+
+    function getOwnerChangesLength() external view returns (uint256) {
+        return ownerChanges.length;
     }
 
     // =========================================================
@@ -741,11 +716,12 @@ contract DAFImplementation {
     }
 
     modifier onlyRillaHolder(int256 voteSize) {
-        uint256 balance = IERC20(IRillaIndex(rillaIndex).getRillaAddress())
-            .balanceOf(msg.sender);
+        uint256 balance = IERC20(IRillaIndex(rillaIndex).rilla()).balanceOf(
+            msg.sender
+        );
         require(
             balance >= uint256(abs(voteSize)) &&
-                balance > IRillaIndex(rillaIndex).getVoteMin(),
+                balance > IRillaIndex(rillaIndex).rillaVoteMin(),
             "Not enough RILLA voting power"
         );
         _;

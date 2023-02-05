@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -36,11 +37,11 @@ contract RillaIndex is Ownable {
     // ======================================================
     // ================ DECLARE STATE VARIABLES =============
     // ======================================================
-    CharityDonation[] public donations; // index is donationId
-    mapping(uint256 => bool) public charities; // EIN mapping to name
-    mapping(address => uint256) public DAFs; // address of DAF with respective ID
-    mapping(address => address[]) public ownersDAFs; // address of user maps to all DAFs they are an owner of. Remove by copying last element to empty location, then pop last element.
-    uint256 public numUnfulfilled; // number of donations where fulfilled is false
+    CharityDonation[] public donations;
+    mapping(uint256 => bool) public charities;
+    mapping(address => uint256) public DAFs;
+    mapping(address => address[]) public ownersDAFs;
+    uint256 public numUnfulfilled;
     uint256 public numDAFs;
     // state vars with setters
     bool public isRillaSwapLive = true;
@@ -75,30 +76,31 @@ contract RillaIndex is Ownable {
     // ================   CHARITY FUNCTIONS     =============
     // ======================================================
 
-    function getDonationFromId(uint256 donationId)
-        public
-        view
-        returns (CharityDonation memory)
-    {
-        return donations[donationId];
+    function nDonations() public view returns (uint256) {
+        return donations.length;
     }
 
-    function getUnfulfilledDonations(uint256)
+    function getUnfulfilledDonations()
         public
         view
-        returns (CharityDonation[] memory out)
+        returns (CharityDonation[] memory, uint256[] memory)
     {
+        CharityDonation[] memory outVals = new CharityDonation[](numUnfulfilled);
+        uint256[] memory outIdxs = new uint256[](numUnfulfilled);
         uint256 found = 0;
         for (
-            uint256 i = donations.length - 1;
+            uint256 i = donations.length;
             numUnfulfilled - found > 0 && i > 0;
             i--
         ) {
-            CharityDonation memory donation = donations[i];
+            CharityDonation memory donation = donations[i - 1];
             if (!donation.fulfilled) {
-                out[found++] = donation;
+                outVals[found] = donation;
+                outIdxs[found] = i - 1;
+                found++;
             }
         }
+        return (outVals, outIdxs);
     }
 
     function modifyCharities(uint32[] calldata EIN, bool[] calldata state)
@@ -128,7 +130,7 @@ contract RillaIndex is Ownable {
         emit NewDonation(amount, EIN, donations.length - 1);
     }
 
-    function fulfillDonation(uint256[] memory donationIds) external onlyOwner {
+    function fulfillDonations(uint256[] memory donationIds) external onlyOwner {
         for (uint256 i = 0; i < donationIds.length; ++i) {
             CharityDonation storage donation = donations[donationIds[i]];
             donation.fulfilled = true;
@@ -157,10 +159,15 @@ contract RillaIndex is Ownable {
         emit NewDaf(account, numDAFs, name);
     }
 
-    /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    /// @return fee address (multisig)
-    function getFeeAddress() external view returns (address) {
-        return feeAddress;
+    function swapRilla(address sender, uint256 amount) external onlyDaf {
+        // only do something if isRillaSwapLive == true
+        if (isRillaSwapLive) {
+            IERC20(rilla).safeTransferFrom(
+                treasury,
+                sender,
+                amount * rillaSwapRate
+            );
+        }
     }
 
     /// @notice gets array of all DAF addresses that owner is part owner of
@@ -174,55 +181,61 @@ contract RillaIndex is Ownable {
         return ownersDAFs[owner];
     }
 
-    /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    /// @return fee percent, max value is 10_000 (1e4)
-    function getFeeOutBps() external view returns (uint256) {
-        return feeOutBps;
-    }
-
-    /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    /// @return fee percent, max value is 10_000 (1e4)
-    function getFeeInBps() external view returns (uint256) {
-        return feeInBps;
-    }
-
-    function getFeeSwapBps() external view returns (uint256) {
-        return feeSwapBps;
-    }
-
-    function getWaitTime() external view returns (uint256) {
-        return waitTime;
-    }
-
-    function getInterimWaitTime() external view returns (uint256) {
-        return interimWaitTime;
-    }
-
-    function getExpireTime() external view returns (uint256) {
-        return expireTime;
-    }
-
-    function getVoteMin() external view returns (uint256) {
-        return rillaVoteMin;
-    }
-
-    function getRillaAddress() external view returns (address) {
-        return rilla;
-    }
-
-    function getTreasuryAddress() external view returns (address) {
-        return treasury;
-    }
-
     function isAcceptedEIN(uint256 EIN) external view returns (bool) {
         return charities[EIN];
     }
+
+    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
+    // /// @return fee address (multisig)
+    // function getFeeAddress() external view returns (address) {
+    //     return feeAddress;
+    // }
+
+    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
+    // /// @return fee percent, max value is 10_000 (1e4)
+    // function getFeeOutBps() external view returns (uint256) {
+    //     return feeOutBps;
+    // }
+    //
+    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
+    // /// @return fee percent, max value is 10_000 (1e4)
+    // function getFeeInBps() external view returns (uint256) {
+    //     return feeInBps;
+    // }
+    //
+    // function getFeeSwapBps() external view returns (uint256) {
+    //     return feeSwapBps;
+    // }
+    //
+    // function getWaitTime() external view returns (uint256) {
+    //     return waitTime;
+    // }
+    //
+    // function getInterimWaitTime() external view returns (uint256) {
+    //     return interimWaitTime;
+    // }
+    //
+    // function getExpireTime() external view returns (uint256) {
+    //     return expireTime;
+    // }
+    //
+    // function getVoteMin() external view returns (uint256) {
+    //     return rillaVoteMin;
+    // }
+    //
+    // function getRillaAddress() external view returns (address) {
+    //     return rilla;
+    // }
+    //
+    // function getTreasuryAddress() external view returns (address) {
+    //     return treasury;
+    // }
 
     function setDafImplementation(address _daf) public onlyOwner {
         dafImplementation = _daf;
     }
 
-    function setRillaAddress(address _rilla) public onlyOwner {
+    function setRilla(address _rilla) public onlyOwner {
         rilla = _rilla;
     }
 
@@ -234,7 +247,7 @@ contract RillaIndex is Ownable {
         isRillaSwapLive = val;
     }
 
-    function setTreasuryAddress(address _treasury) public onlyOwner {
+    function setTreasury(address _treasury) public onlyOwner {
         treasury = _treasury;
     }
 
