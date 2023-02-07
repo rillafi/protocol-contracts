@@ -185,52 +185,6 @@ contract RillaIndex is Ownable {
         return charities[EIN];
     }
 
-    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    // /// @return fee address (multisig)
-    // function getFeeAddress() external view returns (address) {
-    //     return feeAddress;
-    // }
-
-    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    // /// @return fee percent, max value is 10_000 (1e4)
-    // function getFeeOutBps() external view returns (uint256) {
-    //     return feeOutBps;
-    // }
-    //
-    // /// @notice Allows endpoint for other contracts to fetch from. Easier to control.
-    // /// @return fee percent, max value is 10_000 (1e4)
-    // function getFeeInBps() external view returns (uint256) {
-    //     return feeInBps;
-    // }
-    //
-    // function getFeeSwapBps() external view returns (uint256) {
-    //     return feeSwapBps;
-    // }
-    //
-    // function getWaitTime() external view returns (uint256) {
-    //     return waitTime;
-    // }
-    //
-    // function getInterimWaitTime() external view returns (uint256) {
-    //     return interimWaitTime;
-    // }
-    //
-    // function getExpireTime() external view returns (uint256) {
-    //     return expireTime;
-    // }
-    //
-    // function getVoteMin() external view returns (uint256) {
-    //     return rillaVoteMin;
-    // }
-    //
-    // function getRillaAddress() external view returns (address) {
-    //     return rilla;
-    // }
-    //
-    // function getTreasuryAddress() external view returns (address) {
-    //     return treasury;
-    // }
-
     function setDafImplementation(address _daf) public onlyOwner {
         dafImplementation = _daf;
     }

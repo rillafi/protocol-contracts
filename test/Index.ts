@@ -594,6 +594,6 @@ describe('DAF', function () {
         expect(val.eq(1000));
     });
     // TODO: think about upgradeability
-    // TODO: think about pauseability for fulfills
+    // TODO: think about pauseability for fulfills (swapRilla function will need to do a swap through 0x)
     // TODO: think about upgrading DAF to new swap mechanics
 });
