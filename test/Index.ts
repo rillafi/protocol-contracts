@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import hre, { ethers } from 'hardhat';
+import hre, { ethers, upgrades } from 'hardhat';
 import { Signer, Contract, BigNumber, BigNumberish } from 'ethers';
 import { expect } from 'chai';
 import erc20abi from '../abis/erc20abi.json';
@@ -20,6 +20,7 @@ describe('DAF', function () {
     let weth: Contract;
     let DafImplementation: Contract;
     let RillaIndex: Contract;
+    let RillaIndexImpl: Contract;
     let Rilla: Contract;
     /* let VeRilla: Contract; */
     let accounts: Signer[];
@@ -128,17 +129,18 @@ describe('DAF', function () {
         );
         DafImplementation = await dafImplementation.deploy();
 
-        let rillaIndex = await ethers.getContractFactory(
+        let rillaIndexImpl = await ethers.getContractFactory(
             'RillaIndex',
             deployer
         );
-        RillaIndex = await rillaIndex.deploy(
+        RillaIndexImpl = await rillaIndexImpl.deploy();
+        RillaIndex = await upgrades.deployProxy(rillaIndexImpl, [
             DafImplementation.address,
             Rilla.address,
             feeAdd,
             treasuryAdd,
-            BigNumber.from(1e10) // 1 cent swap rate
-        );
+            BigNumber.from(1e10), // 1 cent swap rate
+        ]);
 
         await Rilla.connect(treasury).approve(
             RillaIndex.address,
@@ -541,13 +543,14 @@ describe('DAF', function () {
         vals.forEach((v, i) => expect(v).to.equal(bools[i]));
     });
     it('Fulfills Donations', async function () {
-        const prev = await RillaIndex.numUnfulfilled()
+        const prev = await RillaIndex.numUnfulfilled();
         const [_, ids] = await RillaIndex.getUnfulfilledDonations();
-        await expect(RillaIndex.connect(accounts[10]).fulfillDonations(ids)).to.be.reverted;
+        await expect(RillaIndex.connect(accounts[10]).fulfillDonations(ids)).to
+            .be.reverted;
         await RillaIndex.fulfillDonations(ids);
-        const cur = await RillaIndex.numUnfulfilled()
-        expect(cur.gt(prev))
-    }); 
+        const cur = await RillaIndex.numUnfulfilled();
+        expect(cur.gt(prev));
+    });
     it('Gets DAFs for Owner', async function () {
         const dafs: any[] = await RillaIndex.getDAFsForOwner(addys[0]);
         expect(dafs).includes(daf.address);

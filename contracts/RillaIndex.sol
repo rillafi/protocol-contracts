@@ -4,8 +4,12 @@ pragma solidity ^0.8.16;
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+// import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+
 
 interface IDaf {
     function initialize(
@@ -15,7 +19,7 @@ interface IDaf {
     ) external;
 }
 
-contract RillaIndex is Ownable {
+contract RillaIndex is OwnableUpgradeable {
     using SafeERC20 for IERC20;
     modifier onlyDaf() {
         require(DAFs[msg.sender] > 0, "Address is not a DAF.");
@@ -44,33 +48,52 @@ contract RillaIndex is Ownable {
     uint256 public numUnfulfilled;
     uint256 public numDAFs;
     // state vars with setters
-    bool public isRillaSwapLive = true;
+    bool public isRillaSwapLive;
     address public dafImplementation;
     address public rilla;
     address public treasury;
     address public feeAddress;
-    uint256 public feeOutBps = 100;
-    uint256 public feeInBps = 100;
-    uint256 public feeSwapBps = 100;
-    uint256 public rillaSwapRate;
-    uint256 public waitTime = 1 weeks;
-    uint256 public interimWaitTime = 1 days;
-    uint256 public expireTime = 3 weeks;
-    uint256 public rillaVoteMin = 1000e18;
+    uint256 public feeOutBps;
+    uint256 public feeInBps;
+    uint256 public feeSwapBps;
+    uint256 public rillaSwapRate; // 1e12 == 1 USDC / RILLA
+    uint256 public waitTime;
+    uint256 public interimWaitTime;
+    uint256 public expireTime;
+    uint256 public rillaVoteMin;
 
-    constructor(
+    function initialize(
         address _dafImplementation,
         address _rilla,
         address _feeAddress,
         address _treasury,
         uint256 _rillaSwapRate
-    ) {
+    ) public initializer {
         dafImplementation = _dafImplementation;
-        feeAddress = _feeAddress;
         rilla = _rilla;
+        feeAddress = _feeAddress;
         treasury = _treasury;
         rillaSwapRate = _rillaSwapRate;
+        isRillaSwapLive = true;
+        feeOutBps = 100;
+        feeInBps = 100;
+        feeSwapBps = 100;
+        waitTime = 1 weeks;
+        interimWaitTime = 1 days;
+        expireTime = 3 weeks;
+        rillaVoteMin = 1000e18;
+        __Ownable_init();
     }
+
+    // constructor(
+    //     address _dafImplementation,
+    //     address _feeAddress,
+    //     address _treasury
+    // ) {
+    //     dafImplementation = _dafImplementation;
+    //     feeAddress = _feeAddress;
+    //     treasury = _treasury;
+    // }
 
     // ======================================================
     // ================   CHARITY FUNCTIONS     =============
