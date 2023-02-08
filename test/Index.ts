@@ -243,7 +243,8 @@ describe('DAF', function () {
         expect(cur.gt(prev));
         prev = await Rilla.balanceOf(daiRichAdd);
         donationAmount = parseUnits('1000', 18);
-        let quote = quote0x(daiAdd, usdcAdd, donationAmount);
+        let feeAmount = await feeInCalc(donationAmount);
+        let quote = quote0x(daiAdd, usdcAdd, feeAmount);
         await dai.connect(daiRich).approve(daf.address, MAXUINT);
         await daf.connect(daiRich).donateToDaf(daiAdd, donationAmount, quote);
         cur = await Rilla.balanceOf(daiRichAdd);
@@ -251,7 +252,7 @@ describe('DAF', function () {
 
         prev = await Rilla.balanceOf(daiRichAdd);
         donationAmount = ethers.utils.parseEther('625');
-        let feeAmount = await feeInCalc(donationAmount);
+        feeAmount = await feeInCalc(donationAmount);
         let quoteData = await quote0x(wethAdd, usdcAdd, feeAmount);
         let tx = await daf
             .connect(accounts[1])

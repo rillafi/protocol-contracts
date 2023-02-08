@@ -9,8 +9,6 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-
-
 interface IDaf {
     function initialize(
         address,
@@ -37,6 +35,8 @@ contract RillaIndex is OwnableUpgradeable {
     // ===================== CONSTANTS ======================
     // ======================================================
     address constant usdc = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
+    uint256 constant BPS = 10000;
+    address constant swap0x = 0xDEF1ABE32c034e558Cdd535791643C58a13aCC10;
 
     // ======================================================
     // ================ DECLARE STATE VARIABLES =============
@@ -85,16 +85,6 @@ contract RillaIndex is OwnableUpgradeable {
         __Ownable_init();
     }
 
-    // constructor(
-    //     address _dafImplementation,
-    //     address _feeAddress,
-    //     address _treasury
-    // ) {
-    //     dafImplementation = _dafImplementation;
-    //     feeAddress = _feeAddress;
-    //     treasury = _treasury;
-    // }
-
     // ======================================================
     // ================   CHARITY FUNCTIONS     =============
     // ======================================================
@@ -108,7 +98,9 @@ contract RillaIndex is OwnableUpgradeable {
         view
         returns (CharityDonation[] memory, uint256[] memory)
     {
-        CharityDonation[] memory outVals = new CharityDonation[](numUnfulfilled);
+        CharityDonation[] memory outVals = new CharityDonation[](
+            numUnfulfilled
+        );
         uint256[] memory outIdxs = new uint256[](numUnfulfilled);
         uint256 found = 0;
         for (
@@ -182,14 +174,43 @@ contract RillaIndex is OwnableUpgradeable {
         emit NewDaf(account, numDAFs, name);
     }
 
-    function swapRilla(address sender, uint256 amount) external onlyDaf {
-        // only do something if isRillaSwapLive == true
+    function executeSwap0x(
+        address token,
+        uint256 amount,
+        bytes memory swapCallData
+    ) internal {
+        if (IERC20(token).allowance(address(this), swap0x) < amount) {
+            IERC20(token).safeApprove(address(swap0x), type(uint256).max);
+        }
+        (bool success, ) = swap0x.call(swapCallData);
+        require(success, "0x swap unsuccessful");
+    }
+
+    function rillaFee(
+        address token,
+        uint256 amount,
+        bytes calldata swapCallData
+    ) external onlyDaf returns (uint256 rillaAmount) {
         if (isRillaSwapLive) {
-            IERC20(rilla).safeTransferFrom(
-                treasury,
-                sender,
-                amount * rillaSwapRate
-            );
+            amount = (amount * feeInBps) / BPS;
+            if (token == usdc) {
+                IERC20(usdc).safeTransferFrom(msg.sender, feeAddress, amount);
+                rillaAmount = rillaSwapRate * (amount);
+                IERC20(rilla).safeTransferFrom(
+                    treasury,
+                    msg.sender,
+                    rillaAmount
+                );
+                return rillaAmount;
+            }
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            uint256 prevBal = IERC20(usdc).balanceOf(address(this));
+            executeSwap0x(token, amount, swapCallData);
+            uint256 curBal = IERC20(usdc).balanceOf(address(this));
+            require(curBal > prevBal, "Swap route invalid");
+            IERC20(usdc).safeTransfer(feeAddress, curBal - prevBal);
+            rillaAmount = rillaSwapRate * (curBal - prevBal);
+            IERC20(rilla).safeTransferFrom(treasury, msg.sender, rillaAmount);
         }
     }
 

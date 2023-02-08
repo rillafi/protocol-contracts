@@ -36,7 +36,11 @@ interface IRillaIndex {
 
     function createDonation(uint256 amount, uint256 EIN) external;
 
-    function swapRilla(address sender, uint256 amount) external;
+    function rillaFee(
+        address token,
+        uint256 amount,
+        bytes calldata swapCallData
+    ) external returns (uint256);
 }
 
 // TODO: change requires for a DAF with 1 owner so there is no wait time
@@ -144,28 +148,48 @@ contract DAFImplementation {
     }
 
     function updateFundsAvailable(address token) public {
+        if (availableFunds[token] == 0) {
+            availableTokens.push(token);
+        }
         availableFunds[token] = IERC20(token).balanceOf(address(this));
+        if (availableFunds[token] == 0) {
+            availableFunds[token] = 1;
+        }
     }
 
     function donateToDaf(
         address token,
         uint256 amount,
-        bytes calldata swapCallData
+        bytes calldata swapCallData // to USDC now, to RILLA later
     ) public {
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        chargeFee(token, amount, FeeType.IN, swapCallData);
-        if (availableFunds[token] == 0) {
-            availableTokens.push(token);
+        // transfer token to here
+        if (token != weth) {
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
+        if (IERC20(token).allowance(address(this), rillaIndex) < amount) {
+            IERC20(token).safeApprove(address(rillaIndex), type(uint256).max);
+        }
+        // RillaIndex uses transferFrom to receive (fee * amount / BPS) of token
+        // swaps token to RILLA
+        // sends RILLA back to us
+        uint256 rillaAmount = IRillaIndex(rillaIndex).rillaFee(
+            token,
+            amount,
+            swapCallData
+        );
+        // we send back to msg.sender
+        IERC20(IRillaIndex(rillaIndex).rilla()).safeTransfer(
+            msg.sender,
+            rillaAmount
+        );
+
         updateFundsAvailable(token);
         emit DonationIn(token, amount);
     }
 
     function donateEthToDaf(bytes calldata swapCallData) public payable {
         IWETH(weth).deposit{value: msg.value}();
-        chargeFee(weth, msg.value, FeeType.IN, swapCallData);
-        updateFundsAvailable(weth);
-        emit DonationIn(weth, msg.value);
+        donateToDaf(weth, msg.value, swapCallData);
     }
 
     // =======================================================================
@@ -492,9 +516,6 @@ contract DAFImplementation {
         // uint256 curTo = IERC20(swap.to).balanceOf(address(this));
 
         // book keeping
-        if (availableFunds[swap.to] == 0) {
-            availableTokens.push(swap.to);
-        }
         updateFundsAvailable(swap.from);
         updateFundsAvailable(swap.to);
 
@@ -519,18 +540,16 @@ contract DAFImplementation {
         // calculate token fee
         uint256 fee;
         if (feeType == FeeType.IN) {
-            fee = IRillaIndex(rillaIndex).feeInBps();
+            revert("Shouldn't occur");
         } else if (feeType == FeeType.OUT) {
             fee = IRillaIndex(rillaIndex).feeOutBps();
         } else if (feeType == FeeType.SWAP) {
             fee = IRillaIndex(rillaIndex).feeSwapBps();
         }
 
+        // how do we switch so that RILLA can be bought by DEX instead of treasury?
         uint256 amount = (totalAmount * fee) / BPS;
         if (token == usdc) {
-            if (feeType == FeeType.IN) {
-                IRillaIndex(rillaIndex).swapRilla(msg.sender, amount);
-            }
             IERC20(usdc).safeTransfer(
                 IRillaIndex(rillaIndex).feeAddress(),
                 amount
@@ -548,12 +567,6 @@ contract DAFImplementation {
             IRillaIndex(rillaIndex).feeAddress(),
             usdcCurBal - usdcPrevBal
         );
-        if (feeType == FeeType.IN) {
-            IRillaIndex(rillaIndex).swapRilla(
-                msg.sender,
-                usdcCurBal - usdcPrevBal
-            );
-        }
         return usdcCurBal - usdcPrevBal;
     }
 

@@ -30,6 +30,10 @@ function main() {
     console.log('slice: ', slice);
     console.log('revocable: ', revocable);
     console.log('amount: ', BigNumber.from(amount).toString());
+
+    // read csv amount and addresses
+    // read tokenvesting contract and see if address has vesting already with amount
+    // if not, create vesting with params based on role and amount
 }
 
 main();
