@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-// import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 interface IDaf {
     function initialize(
@@ -41,14 +39,16 @@ contract RillaIndex is OwnableUpgradeable {
     // ======================================================
     // ================ DECLARE STATE VARIABLES =============
     // ======================================================
+
     CharityDonation[] public donations;
     mapping(uint256 => bool) public charities;
     mapping(address => uint256) public DAFs;
-    mapping(address => address[]) public ownersDAFs;
+    mapping(address => address[]) public membersDAFs;
     uint256 public numUnfulfilled;
     uint256 public numDAFs;
     // state vars with setters
     bool public isRillaSwapLive;
+    bool public paused;
     address public dafImplementation;
     address public rilla;
     address public treasury;
@@ -82,6 +82,7 @@ contract RillaIndex is OwnableUpgradeable {
         interimWaitTime = 1 days;
         expireTime = 3 weeks;
         rillaVoteMin = 1000e18;
+        paused = false;
         __Ownable_init();
     }
 
@@ -161,15 +162,15 @@ contract RillaIndex is OwnableUpgradeable {
 
     /// @notice Factory for new DAFs. Creates new Proxy that points to DAF implementation, then logs address.
     /// @param name Name of new DAF.
-    function makeDaf(string calldata name, address[] calldata _owners)
+    function makeDaf(string calldata name, address[] calldata _members)
         public
         returns (address account)
     {
         account = Clones.clone(dafImplementation);
-        IDaf(account).initialize(address(this), name, _owners);
+        IDaf(account).initialize(address(this), name, _members);
         DAFs[account] = ++numDAFs; // dafId
-        for (uint256 i = 0; i < _owners.length; i++) {
-            ownersDAFs[_owners[i]].push(account); // add owner to account array
+        for (uint256 i = 0; i < _members.length; i++) {
+            membersDAFs[_members[i]].push(account); // add member to account array
         }
         emit NewDaf(account, numDAFs, name);
     }
@@ -205,6 +206,7 @@ contract RillaIndex is OwnableUpgradeable {
             }
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             uint256 prevBal = IERC20(usdc).balanceOf(address(this));
+            // execute swap, ensure usdc is the 'to' token
             executeSwap0x(token, amount, swapCallData);
             uint256 curBal = IERC20(usdc).balanceOf(address(this));
             require(curBal > prevBal, "Swap route invalid");
@@ -212,17 +214,32 @@ contract RillaIndex is OwnableUpgradeable {
             rillaAmount = rillaSwapRate * (curBal - prevBal);
             IERC20(rilla).safeTransferFrom(treasury, msg.sender, rillaAmount);
         }
+        // if (isRillaSwapLive) {
+        //     // calculate fee
+        //     amount = (amount * feeInBps) / BPS;
+        //
+        //     // pull only the fee amount from the DAF
+        //     IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        //
+        //     // execute swap, ensure RILLA is the 'to' token
+        //     uint256 prevBal = IERC20(rilla).balanceOf(address(this));
+        //     executeSwap0x(token, amount, swapCallData);
+        //     uint256 curBal = IERC20(rilla).balanceOf(address(this));
+        //     require(curBal > prevBal, "Swap route invalid");
+        //
+        //     IERC20(rilla).safeTransferFrom(treasury, msg.sender, curBal - prevBal);
+        // }
     }
 
-    /// @notice gets array of all DAF addresses that owner is part owner of
-    /// @param owner Address of owner that is mapping key
-    /// @return Array of all DAF addresses that owner owns
-    function getDAFsForOwner(address owner)
+    /// @notice gets array of all DAF addresses that member is part member of
+    /// @param member Address of member that is mapping key
+    /// @return Array of all DAF addresses that member owns
+    function getDAFsForMember(address member)
         external
         view
         returns (address[] memory)
     {
-        return ownersDAFs[owner];
+        return membersDAFs[member];
     }
 
     function isAcceptedEIN(uint256 EIN) external view returns (bool) {
@@ -243,6 +260,10 @@ contract RillaIndex is OwnableUpgradeable {
 
     function setRillaSwapLive(bool val) public onlyOwner {
         isRillaSwapLive = val;
+    }
+
+    function setPaused(bool val) public onlyOwner {
+        paused = val;
     }
 
     function setTreasury(address _treasury) public onlyOwner {
@@ -282,5 +303,9 @@ contract RillaIndex is OwnableUpgradeable {
 
     function setRillaVoteMin(uint256 _rillaVoteMin) public onlyOwner {
         rillaVoteMin = _rillaVoteMin;
+    }
+
+    function isPaused() public view returns (bool) {
+        return paused;
     }
 }

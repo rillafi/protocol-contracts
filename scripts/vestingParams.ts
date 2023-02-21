@@ -1,39 +1,161 @@
+import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
-function main() {
-    const decimals = 18;
+import Excel from 'exceljs';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import tokenVestingAbi from '../artifacts/contracts/vesting/TokenVesting.sol/TokenVesting.json';
+import erc20Abi from '../artifacts/contracts/token/RILLA.sol/RILLA.json';
+import ethProvider from 'eth-provider';
 
-    const YEAR = 86400 * 365;
-    const SIXMONTHS = 86400 * 30 * 6;
+async function main() {
+    dotenv.config();
+    const YEAR = 365 * 86400;
+    const vestType = {
+        Team: { tge: 5, duration: 4 * YEAR },
+        Advisors: { tge: 5, duration: 3 * YEAR },
+        Liquidity: { tge: 100, duration: 0 },
+        Endowment: { tge: 20, duration: 2 * YEAR },
+        Rewards: { tge: 10, duration: 3 * YEAR },
+        Seed: { tge: 5, duration: 2 * YEAR },
+        Treasury: { tge: 50, duration: Math.floor(1.5 * YEAR) },
+    };
+    const workbook = new Excel.Workbook();
+    await workbook.xlsx.load(
+        fs.readFileSync(path.join(__dirname, './Cap Table.xlsx'))
+    );
+    const sheet = workbook.getWorksheet('Aaron');
+    const vests: {
+        vestingType: 'Team' | 'Advisors' | 'Seed';
+        name: string;
+        amount: BigNumber;
+        address: string;
+        index: number;
+        initialized: boolean;
+        row: number;
+    }[] = [];
 
-    /* function createVestingSchedule( */
-    /*     address _beneficiary, */
-    /*     uint256 _start, */
-    /*     uint256 _cliff, */
-    /*     uint256 _duration, */
-    /*     uint256 _slicePeriodSeconds, */
-    /*     bool _revocable, */
-    /*     uint256 _amount */
-    /* ) */
+    // grab all addresses in array, and an index for each time they appear in that array, and the type of vesting they need
+    sheet.eachRow(function (row, rowNumber) {
+        if (rowNumber == 1) return;
+        if (!row.getCell(4).value?.valueOf()) return;
+        vests.push({
+            vestingType: row.getCell(1).value?.valueOf() as
+                | 'Team'
+                | 'Advisors'
+                | 'Seed',
+            name: row.getCell(2).value?.valueOf() as string,
+            amount: ethers.utils.parseUnits(
+                String(row.getCell(3).value?.valueOf()),
+                18
+            ),
+            address: row.getCell(4).value?.valueOf() as string,
+            index: vests.filter(
+                (vest) =>
+                    vest.address == (row.getCell(4).value?.valueOf() as string)
+            ).length,
+            initialized: false,
+            row: rowNumber,
+        });
+    });
 
-    const address = '0x5117438e943ab870625dda4B0FE3b8118640fFdb';
-    const start = 1675443600;
-    const cliff = 0;
-    const duration = YEAR;
-    const slice = 1;
-    const revocable = true;
-    let amount: number | BigNumber = 21_000_000;
-    amount = BigNumber.from(`${amount}` + '0'.repeat(decimals));
-    console.log('address: ', address);
-    console.log('start: ', start);
-    console.log('cliff: ', cliff);
-    console.log('duration: ', duration);
-    console.log('slice: ', slice);
-    console.log('revocable: ', revocable);
-    console.log('amount: ', BigNumber.from(amount).toString());
+    // init TokenVesting contract
+    const startTime = 1676887200;
+    console.log(date(startTime))
+    const frame = ethProvider('frame'); // Connect to Frame
+    const rilla = '0x96D17e1301b31556e5e263389583A9331e6749E9';
+    const tokenVesting =
+        '0x18894535bE1A02f091B1EaeE8A987DC39Ba4899c' as `0x${string}`;
+    const TokenVesting = await ethers.getContractAt(
+        tokenVestingAbi.abi,
+        tokenVesting
+    );
+    const Rilla = await ethers.getContractAt(erc20Abi.abi, rilla);
+    if (!(await Rilla.balanceOf(TokenVesting.address)).gt(0)) {
+        let tx = await Rilla.populateTransaction.transfer(
+            tokenVesting,
+            ethers.utils.parseEther('1')
+        );
+        tx.from = (
+            (await frame.request({ method: 'eth_requestAccounts' })) as any
+        )[0];
+        await frame.request({ method: 'eth_sendTransaction', params: [tx] });
+        tx = await Rilla.populateTransaction.transfer(
+            tokenVesting,
+            ethers.utils.parseEther('600000000')
+        );
+        tx.from = (
+            (await frame.request({ method: 'eth_requestAccounts' })) as any
+        )[0];
+        await frame.request({ method: 'eth_sendTransaction', params: [tx] });
+    } else {
+        console.log(
+            'TokenVesting balance: ',
+            Number(
+                ethers.utils.formatEther(
+                    await TokenVesting.getWithdrawableAmount()
+                )
+            ).toLocaleString()
+        );
+    }
 
-    // read csv amount and addresses
-    // read tokenvesting contract and see if address has vesting already with amount
-    // if not, create vesting with params based on role and amount
+    // MAKE VESTS
+    for (let i = 0; i < vests.length; i++) {
+        const vest = vests[i];
+        const vestData = await TokenVesting.getVestingScheduleByAddressAndIndex(
+            vest.address,
+            vest.index
+        );
+        if (vestData.initialized) continue;
+        const type = vestType[vest.vestingType];
+        const endTime = startTime + type.duration;
+        const duration = Math.floor(type.duration / (1 - type.tge / 100));
+        const time = Math.floor(endTime - duration);
+        /* const duration */
+        console.log(
+            vest.row,
+            'Name:',
+            vest.name,
+            'Amount:',
+            Number(ethers.utils.formatEther(vest.amount)).toLocaleString(),
+            'End Date:',
+            date(endTime),
+            'Start time:',
+            date(time),
+            '\n'
+        );
+        const cliff = startTime
+        const tx = await TokenVesting.populateTransaction.createVestingSchedule(
+            vest.address,
+            time,
+            cliff,
+            duration,
+            1,
+            true,
+            vest.amount
+        );
+        tx.from = (
+            (await frame.request({ method: 'eth_requestAccounts' })) as any
+        )[0];
+        const res = await frame.request({
+            method: 'eth_sendTransaction',
+            params: [tx],
+        });
+        await ethers.provider.waitForTransaction(res as string, 1);
+        console.log(
+            'TokenVesting balance: ',
+            Number(
+                ethers.utils.formatEther(
+                    await TokenVesting.getWithdrawableAmount()
+                )
+            ).toLocaleString()
+        );
+    }
 }
 
 main();
+
+function date(time: number) {
+    var date = new Date(time * 1000);
+    return date.toUTCString();
+}

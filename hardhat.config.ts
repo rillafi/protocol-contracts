@@ -32,7 +32,7 @@ export default {
         settings: {
             optimizer: {
                 enabled: true,
-                runs: 9999,
+                runs: 200,
             },
         },
     },
@@ -46,16 +46,16 @@ export default {
                 url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
             },
         },
-        // goerli: {
-        //   url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_GOERLI}`,
-        //   accounts: {
-        //     mnemonic: process.env.MNEMONIC,
-        //     path: "m/44'/60'/0'/0",
-        //     initialIndex: 0,
-        //     count: 20,
-        //     passphrase: "",
-        //   },
-        //  },
+        optimism: {
+            url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
+            /* accounts: { */
+            /*     mnemonic: process.env.MNEMONIC, */
+            /*     path: "m/44'/60'/0'/0", */
+            /*     initialIndex: 0, */
+            /*     count: 20, */
+            /*     passphrase: '', */
+            /* }, */
+        },
     },
     etherscan: {
         apiKey: {

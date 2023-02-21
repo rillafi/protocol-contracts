@@ -17,16 +17,21 @@
   },
   "dependencies": {
     "@acala-network/contracts": "^2.3.3",
+    "@ethersproject/providers": "^5.7.2",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@openzeppelin/contracts": "^4.4.0",
     "@openzeppelin/contracts-upgradeable": "^4.8.1",
     "@openzeppelin/hardhat-upgrades": "^1.22.1",
     "@rari-capital/solmate": "^6.2.0",
+    "@wagmi/core": "^0.9.5",
     "dotenv": "^16.0.1",
     "eth-provider": "^0.13.6",
+    "ethcall": "^4.8.13",
+    "exceljs": "^4.3.0",
     "hardhat-change-network": "^0.0.7",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "wagmi": "^0.11.5"
   },
   "scripts": {
     "deploc": "npx hardhat run --network localhost scripts/localNodeConfig.ts"

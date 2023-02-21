@@ -39,8 +39,8 @@ describe('DAF', function () {
     let usdcRich: Signer;
     let daiRichAdd: string = '0xc66825C5c04b3c2CcD536d626934E16248A63f68';
     let daiRich: Signer;
-    let dafOwnersAddys: String[];
-    let dafOwners: Signer[];
+    let dafMembersAddys: String[];
+    let dafMembers: Signer[];
 
     const wethAdd = '0x4200000000000000000000000000000000000006';
     const usdcAdd = '0x7f5c764cbc14f9669b88837ca1490cca17c31607';
@@ -73,10 +73,10 @@ describe('DAF', function () {
         const id = (await daf.getSwapsLength()) - 1;
         await time.increase(days(2));
         await Promise.all(
-            dafOwners.map((owner) =>
+            dafMembers.map((member) =>
                 daf
-                    .connect(owner)
-                    .dafVote(id, parseUnits('10000', 18), VoteType.SWAP)
+                    .connect(member)
+                    .castVote(id, parseUnits('10000', 18), VoteType.SWAP)
             )
         );
         const swap = quote0x(token, usdcAdd, await feeInCalc(amount));
@@ -111,8 +111,8 @@ describe('DAF', function () {
         );
         usdcRichAdd = await usdcRich.getAddress();
         daiRichAdd = await daiRich.getAddress();
-        dafOwners = [...accounts.slice(0, 6), usdcRich, daiRich];
-        dafOwnersAddys = [...addys.slice(0, 6), usdcRichAdd, daiRichAdd];
+        dafMembers = [...accounts.slice(0, 6), usdcRich, daiRich];
+        dafMembersAddys = [...addys.slice(0, 6), usdcRichAdd, daiRichAdd];
 
         // Deploy Contracts
         let rilla = await ethers.getContractFactory('RILLA', deployer);
@@ -148,14 +148,14 @@ describe('DAF', function () {
         );
         const balance = parseUnits('10000', 18);
         await Promise.all(
-            dafOwnersAddys.map((owner) =>
-                Rilla.connect(deployer).transfer(owner, balance)
+            dafMembersAddys.map((member) =>
+                Rilla.connect(deployer).transfer(member, balance)
             )
         );
         // addys 0-9 deposit around 1000 veRILLA
     });
 
-    it('Creates a DAF with one owner', async function () {
+    it('Creates a DAF with one member', async function () {
         // here
         let tx = await RillaIndex.functions.makeDaf('Test', [addys[0]]);
         let receipt = await tx.wait();
@@ -164,14 +164,14 @@ describe('DAF', function () {
             'DAFImplementation',
             RillaIndex.interface.parseLog(receipt.events[0]).args.newDafAddress
         );
-        const ownersDAFs = await RillaIndex.functions.getDAFsForOwner(addys[0]);
-        expect(ownersDAFs[0] == daf.address);
+        const membersDAFs = await RillaIndex.functions.getDAFsForMember(addys[0]);
+        expect(membersDAFs[0] == daf.address);
     });
 
-    it('Creates a DAF with multiple owners', async function () {
+    it('Creates a DAF with multiple members', async function () {
         let tx = await RillaIndex.functions.makeDaf(
             'TestMultiple',
-            dafOwnersAddys
+            dafMembersAddys
         );
         let receipt = await tx.wait();
         expect(receipt.events[0].event == 'NewDaf');
@@ -179,20 +179,20 @@ describe('DAF', function () {
             'DAFImplementation',
             RillaIndex.interface.parseLog(receipt.events[0]).args.newDafAddress
         );
-        const ownersDAFs: String[] = await RillaIndex.functions.getDAFsForOwner(
+        const membersDAFs: String[] = await RillaIndex.functions.getDAFsForMember(
             addys[0]
         );
-        expect(ownersDAFs.includes(daf.address));
+        expect(membersDAFs.includes(daf.address));
     });
 
-    it('Max 10 owners', async function () {
+    it('Max 10 members', async function () {
         await expect(
             RillaIndex.makeDaf('TestMax', [
                 ...addys.slice(0, 10),
                 usdcRichAdd,
                 daiRichAdd,
             ])
-        ).to.be.revertedWith('Max 10 owners');
+        ).to.be.revertedWith('Max 10 members');
     });
 
     // donation into daf
@@ -227,7 +227,7 @@ describe('DAF', function () {
     it('Frees WETH for donation', async function () {
         let prevUsdcAmount: BigNumber = await usdc.balanceOf(daf.address);
         let wethBal: BigNumber = await weth.balanceOf(daf.address);
-        await tradeToUsdc(daf, dafOwners[0], wethAdd, wethBal);
+        await tradeToUsdc(daf, dafMembers[0], wethAdd, wethBal);
 
         let curUsdcAmount: BigNumber = await usdc.balanceOf(daf.address);
         expect(curUsdcAmount.gt(prevUsdcAmount));
@@ -282,7 +282,7 @@ describe('DAF', function () {
     it('Frees DAI for donation', async function () {
         let prevUsdcAmount: BigNumber = await usdc.balanceOf(daf.address);
         let daiBal: BigNumber = await dai.balanceOf(daf.address);
-        await tradeToUsdc(daf, dafOwners[0], daiAdd, daiBal);
+        await tradeToUsdc(daf, dafMembers[0], daiAdd, daiBal);
 
         let curUsdcAmount: BigNumber = await usdc.balanceOf(daf.address);
         expect(curUsdcAmount.gt(prevUsdcAmount));
@@ -318,18 +318,18 @@ describe('DAF', function () {
     it('Cannot immediately pass a vote', async function () {
         const balance = ethers.utils.parseEther('10000');
         // TODO: Make sure VeRilla is removed completely and tests still work
-        await daf.dafVote(0, balance, VoteType.DONATION);
+        await daf.castVote(0, balance, VoteType.DONATION);
         await expect(daf.fulfillDonation(0)).to.be.reverted;
     });
     it('Cannot immediately pass a vote with > 50% voting power', async function () {
         await Promise.all(
-            dafOwners.slice(0, 6).map(async (owner) => {
+            dafMembers.slice(0, 6).map(async (member) => {
                 const balance = await Rilla['balanceOf(address)'](
-                    await owner.getAddress()
+                    await member.getAddress()
                 );
                 return daf
-                    .connect(owner)
-                    .dafVote(0, balance, VoteType.DONATION);
+                    .connect(member)
+                    .castVote(0, balance, VoteType.DONATION);
             })
         );
         await expect(daf.fulfillDonation(0)).to.be.revertedWith(
@@ -344,7 +344,7 @@ describe('DAF', function () {
     it('Can pass a vote after 1 week', async function () {
         const amount = 1000;
         await daf.createOutDonation(amount, 2);
-        await daf.dafVote(
+        await daf.castVote(
             1,
             ethers.utils.parseUnits('10000', 18),
             VoteType.DONATION
@@ -355,40 +355,40 @@ describe('DAF', function () {
         await expect(daf.donations(2)).to.be.reverted;
     });
 
-    // owner voting
-    it('Can create a vote to add an owner', async function () {
-        await daf.connect(dafOwners[0]).createOwnerChange([treasuryAdd], true);
-        const valid = await daf.ownerChanges(0);
+    // member voting
+    it('Can create a vote to add an member', async function () {
+        await daf.connect(dafMembers[0]).createMemberChange([treasuryAdd], true);
+        const valid = await daf.memberChanges(0);
         expect(valid);
-        await expect(daf.ownerChanges(1)).to.be.reverted;
+        await expect(daf.memberChanges(1)).to.be.reverted;
     });
-    it('Can fail a vote to add an owner', async function () {
+    it('Can fail a vote to add an member', async function () {
         await time.increase(days(2));
         await Promise.all(
-            dafOwners
+            dafMembers
                 .slice(0, 5)
-                .map((owner) =>
+                .map((member) =>
                     daf
-                        .connect(owner)
-                        .dafVote(
+                        .connect(member)
+                        .castVote(
                             0,
                             '-' + parseUnits('10000', 18).toString(),
                             VoteType.OWNERCHANGE
                         )
                 )
         );
-        await expect(daf.connect(dafOwners[0]).fulfillOwnerChange(0)).to.be
+        await expect(daf.connect(dafMembers[0]).fulfillMemberChange(0)).to.be
             .reverted;
     });
-    it('Can pass a vote to add an owner', async function () {
-        await daf.connect(dafOwners[0]).createOwnerChange([feeAdd], true);
+    it('Can pass a vote to add an member', async function () {
+        await daf.connect(dafMembers[0]).createMemberChange([feeAdd], true);
         await Promise.all(
-            dafOwners
+            dafMembers
                 .slice(0, 5)
-                .map((owner) =>
+                .map((member) =>
                     daf
-                        .connect(owner)
-                        .dafVote(
+                        .connect(member)
+                        .castVote(
                             1,
                             parseUnits('10000', 18).toString(),
                             VoteType.OWNERCHANGE
@@ -396,18 +396,18 @@ describe('DAF', function () {
                 )
         );
         await time.increase(days(2));
-        expect(await daf.connect(dafOwners[0]).fulfillOwnerChange(1));
-        expect(await daf.getOwners()).to.include(feeAdd);
+        expect(await daf.connect(dafMembers[0]).fulfillMemberChange(1));
+        expect(await daf.getMembers()).to.include(feeAdd);
     });
-    it('Can create a vote to remove an owner', async function () {
-        await daf.connect(dafOwners[0]).createOwnerChange([feeAdd], false);
+    it('Can create a vote to remove an member', async function () {
+        await daf.connect(dafMembers[0]).createMemberChange([feeAdd], false);
         await Promise.all(
-            dafOwners
+            dafMembers
                 .slice(0, 5)
-                .map((owner) =>
+                .map((member) =>
                     daf
-                        .connect(owner)
-                        .dafVote(
+                        .connect(member)
+                        .castVote(
                             2,
                             parseUnits('10000', 18).toString(),
                             VoteType.OWNERCHANGE
@@ -415,47 +415,47 @@ describe('DAF', function () {
                 )
         );
     });
-    it('Can fail a vote to remove an owner', async function () {
+    it('Can fail a vote to remove an member', async function () {
         await time.increase(days(2));
         await Promise.all(
-            dafOwners
+            dafMembers
                 .slice(0, 5)
-                .map((owner) =>
+                .map((member) =>
                     daf
-                        .connect(owner)
-                        .dafVote(
+                        .connect(member)
+                        .castVote(
                             2,
                             '-' + parseUnits('10000', 18).toString(),
                             VoteType.OWNERCHANGE
                         )
                 )
         );
-        await expect(daf.connect(dafOwners[2]).fulfillOwnerChange(2)).to.be
+        await expect(daf.connect(dafMembers[2]).fulfillMemberChange(2)).to.be
             .reverted;
-        expect(await daf.getOwners()).to.include(feeAdd);
+        expect(await daf.getMembers()).to.include(feeAdd);
     });
-    it('Can pass a vote to remove an owner', async function () {
-        await daf.connect(dafOwners[0]).createOwnerChange([feeAdd], false);
+    it('Can pass a vote to remove an member', async function () {
+        await daf.connect(dafMembers[0]).createMemberChange([feeAdd], false);
         await time.increase(days(2));
         await Promise.all(
-            dafOwners
+            dafMembers
                 .slice(0, 5)
-                .map((owner) =>
+                .map((member) =>
                     daf
-                        .connect(owner)
-                        .dafVote(
+                        .connect(member)
+                        .castVote(
                             3,
                             parseUnits('10000', 18).toString(),
                             VoteType.OWNERCHANGE
                         )
                 )
         );
-        expect(await daf.connect(dafOwners[2]).fulfillOwnerChange(3));
-        expect(await daf.getOwners()).to.not.include(feeAdd);
+        expect(await daf.connect(dafMembers[2]).fulfillMemberChange(3));
+        expect(await daf.getMembers()).to.not.include(feeAdd);
     });
     it('Fetches Active Swaps', async function () {
         await daf
-            .connect(dafOwners[0])
+            .connect(dafMembers[0])
             .createSwap(wethAdd, daiAdd, parseUnits('1', 18));
         let swaps = await daf.fetchActiveSwaps();
         expect(swaps);
@@ -464,7 +464,7 @@ describe('DAF', function () {
                 .fill(0)
                 .map(() =>
                     daf
-                        .connect(dafOwners[0])
+                        .connect(dafMembers[0])
                         .createSwap(wethAdd, daiAdd, parseUnits('1', 18))
                 )
         );
@@ -483,17 +483,17 @@ describe('DAF', function () {
         expect(donations);
     });
 
-    it('Fetches Active Owners', async function () {
-        await daf.createOwnerChange([treasuryAdd], true);
-        let ownerChanges = await daf.fetchActiveOwnerChanges();
-        expect(ownerChanges);
+    it('Fetches Active Members', async function () {
+        await daf.createMemberChange([treasuryAdd], true);
+        let memberChanges = await daf.fetchActiveMemberChanges();
+        expect(memberChanges);
         await Promise.all(
             new Array(55)
                 .fill(0)
-                .map(() => daf.createOwnerChange([treasuryAdd], true))
+                .map(() => daf.createMemberChange([treasuryAdd], true))
         );
-        ownerChanges = await daf.fetchActiveOwnerChanges();
-        expect(ownerChanges);
+        memberChanges = await daf.fetchActiveMemberChanges();
+        expect(memberChanges);
         // returns all, including array elements which are just the 0 values. must account for this in our frontend
     });
 
@@ -511,13 +511,13 @@ describe('DAF', function () {
         /* ); */
         /* await time.increase(days(2)); */
         /* await Promise.all( */
-        /*     dafOwners */
+        /*     dafMembers */
         /*         .slice(0, 5) */
-        /*         .map((owner) => */
+        /*         .map((member) => */
         /*             donOuts.map((_, i) => */
         /*                 daf */
-        /*                     .connect(owner) */
-        /*                     .dafVote( */
+        /*                     .connect(member) */
+        /*                     .castVote( */
         /*                         nDonations.add(i), */
         /*                         parseUnits('10000', 18), */
         /*                         VoteType.DONATION */
@@ -527,7 +527,7 @@ describe('DAF', function () {
         /* ); */
         /* await Promise.all( */
         /*     donOuts.map((_, i) => */
-        /*         daf.connect(dafOwners[0]).fulfillDonation(nDonations.add(i)) */
+        /*         daf.connect(dafMembers[0]).fulfillDonation(nDonations.add(i)) */
         /*     ) */
         /* ); */
         /* const second = await RillaIndex.getUnfulfilledDonations(); */
@@ -552,8 +552,8 @@ describe('DAF', function () {
         const cur = await RillaIndex.numUnfulfilled();
         expect(cur.gt(prev));
     });
-    it('Gets DAFs for Owner', async function () {
-        const dafs: any[] = await RillaIndex.getDAFsForOwner(addys[0]);
+    it('Gets DAFs for Member', async function () {
+        const dafs: any[] = await RillaIndex.getDAFsForMember(addys[0]);
         expect(dafs).includes(daf.address);
     });
     it('All setters work', async function () {
