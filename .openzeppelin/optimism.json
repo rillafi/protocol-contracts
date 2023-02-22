@@ -1,0 +1,306 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xBb9FE2C4BF6529C19f7C78eE23F64AB0Df14371e",
+    "txHash": "0x4c0f3a03700808aed9c7913071cd04f1b0550f0e66fe04adfaa67b5867e2ddb8"
+  },
+  "proxies": [
+    {
+      "address": "0x0285319297851408647F1b2D095b14c000FF5F94",
+      "txHash": "0x09cb84162dff4c47eab7574849b188f67d4b7381cbcb7ce28ef6fa54683f7454",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "154d796fdc6c3c759c76ebe49c480bee6a54816fff782b44303e050ecc7c8fc2": {
+      "address": "0x1887fc36142F11f94f79B04b2c5595E8436eAA53",
+      "txHash": "0xf6cef758819fc6da34f3bf681c90498b50a81b3cf34087d55114e9ced30410e9",
+      "layout": {
+        "solcVersion": "0.8.16",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "donations",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_struct(CharityDonation)5547_storage)dyn_storage",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:43"
+          },
+          {
+            "label": "charities",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_mapping(t_uint256,t_bool)",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:44"
+          },
+          {
+            "label": "DAFs",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:45"
+          },
+          {
+            "label": "membersDAFs",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_mapping(t_address,t_array(t_address)dyn_storage)",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:46"
+          },
+          {
+            "label": "numUnfulfilled",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:47"
+          },
+          {
+            "label": "numDAFs",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:48"
+          },
+          {
+            "label": "isRillaSwapLive",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_bool",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:50"
+          },
+          {
+            "label": "paused",
+            "offset": 1,
+            "slot": "107",
+            "type": "t_bool",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:51"
+          },
+          {
+            "label": "dafImplementation",
+            "offset": 2,
+            "slot": "107",
+            "type": "t_address",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:52"
+          },
+          {
+            "label": "rilla",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_address",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:53"
+          },
+          {
+            "label": "treasury",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_address",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:54"
+          },
+          {
+            "label": "feeAddress",
+            "offset": 0,
+            "slot": "110",
+            "type": "t_address",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:55"
+          },
+          {
+            "label": "feeOutBps",
+            "offset": 0,
+            "slot": "111",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:56"
+          },
+          {
+            "label": "feeInBps",
+            "offset": 0,
+            "slot": "112",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:57"
+          },
+          {
+            "label": "feeSwapBps",
+            "offset": 0,
+            "slot": "113",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:58"
+          },
+          {
+            "label": "rillaSwapRate",
+            "offset": 0,
+            "slot": "114",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:59"
+          },
+          {
+            "label": "waitTime",
+            "offset": 0,
+            "slot": "115",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:60"
+          },
+          {
+            "label": "interimWaitTime",
+            "offset": 0,
+            "slot": "116",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:61"
+          },
+          {
+            "label": "expireTime",
+            "offset": 0,
+            "slot": "117",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:62"
+          },
+          {
+            "label": "rillaVoteMin",
+            "offset": 0,
+            "slot": "118",
+            "type": "t_uint256",
+            "contract": "RillaIndex",
+            "src": "contracts/RillaIndex.sol:63"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(CharityDonation)5547_storage)dyn_storage": {
+            "label": "struct RillaIndex.CharityDonation[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_address)dyn_storage)": {
+            "label": "mapping(address => address[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bool)": {
+            "label": "mapping(uint256 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(CharityDonation)5547_storage": {
+            "label": "struct RillaIndex.CharityDonation",
+            "members": [
+              {
+                "label": "daf",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "charityId",
+                "type": "t_uint64",
+                "offset": 20,
+                "slot": "0"
+              },
+              {
+                "label": "fulfilled",
+                "type": "t_bool",
+                "offset": 28,
+                "slot": "0"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}

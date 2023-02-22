@@ -39,6 +39,7 @@ export default {
     vyper: {
         compilers: [{ version: '0.2.4' }, { version: '0.2.7' }],
     },
+    namedAccounts: { deployer: '0x5117438e943ab870625dda4B0FE3b8118640fFdb' },
     networks: {
         hardhat: {
             chainId: 31337,
@@ -47,14 +48,10 @@ export default {
             },
         },
         optimism: {
-            url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
-            /* accounts: { */
-            /*     mnemonic: process.env.MNEMONIC, */
-            /*     path: "m/44'/60'/0'/0", */
-            /*     initialIndex: 0, */
-            /*     count: 20, */
-            /*     passphrase: '', */
-            /* }, */
+            url: 'http://127.0.0.1:1248',
+            chainId: 10,
+            timeout: 60000,
+            deployer: '0x5117438e943ab870625dda4B0FE3b8118640fFdb' 
         },
     },
     etherscan: {
