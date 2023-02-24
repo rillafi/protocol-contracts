@@ -1,20 +1,25 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
-    "txHash": "0x409df34169dcf26793790717d8b797c987a78e2b71fbde5bb2c2177970c08995"
+    "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "txHash": "0xae63d00b0f4dc0d8a99e5458c97135e54f74ff404b0678cefe1939593521cd87"
   },
   "proxies": [
     {
       "address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
-      "txHash": "0x976593e5bb3ed6d58bdc878d74339769339f4f6f76174a27698204aa2a9ac1a9",
+      "txHash": "0x75524d4b8421681c5d42e8a909c067aaedd70dd1882cfec574af2681fb13ace2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+      "txHash": "0x6d0fb8bc6221441f2ecfffcecfd40c17c23d312ea27431b08c992c80180359ba",
       "kind": "transparent"
     }
   ],
   "impls": {
-    "30e7ce100edb359be5410da09046e44eb685edc9c6eebfe4b76fe88c639ac666": {
-      "address": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
-      "txHash": "0x3d7dca79a17bba1fa8cbe40b588dc97d275ec00f6c59903f40ca594a1af9c68b",
+    "154d796fdc6c3c759c76ebe49c480bee6a54816fff782b44303e050ecc7c8fc2": {
+      "address": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+      "txHash": "0xeb7ee0a62e32fd14368d31e49ba04bd8ee519cf6634de967aef26a78c3d4e694",
       "layout": {
         "solcVersion": "0.8.16",
         "storage": [
@@ -63,7 +68,7 @@
             "label": "donations",
             "offset": 0,
             "slot": "101",
-            "type": "t_array(t_struct(CharityDonation)4066_storage)dyn_storage",
+            "type": "t_array(t_struct(CharityDonation)5545_storage)dyn_storage",
             "contract": "RillaIndex",
             "src": "contracts/RillaIndex.sol:43"
           },
@@ -229,7 +234,7 @@
             "label": "address[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(CharityDonation)4066_storage)dyn_storage": {
+          "t_array(t_struct(CharityDonation)5545_storage)dyn_storage": {
             "label": "struct RillaIndex.CharityDonation[]",
             "numberOfBytes": "32"
           },
@@ -257,7 +262,7 @@
             "label": "mapping(uint256 => bool)",
             "numberOfBytes": "32"
           },
-          "t_struct(CharityDonation)4066_storage": {
+          "t_struct(CharityDonation)5545_storage": {
             "label": "struct RillaIndex.CharityDonation",
             "members": [
               {

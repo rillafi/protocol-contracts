@@ -48,10 +48,11 @@ export default {
             },
         },
         optimism: {
+            /* url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`, */
             url: 'http://127.0.0.1:1248',
             chainId: 10,
             timeout: 60000,
-            deployer: '0x5117438e943ab870625dda4B0FE3b8118640fFdb' 
+            deployer: '0x5117438e943ab870625dda4B0FE3b8118640fFdb',
         },
     },
     etherscan: {

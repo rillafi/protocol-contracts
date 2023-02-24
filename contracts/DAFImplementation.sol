@@ -656,7 +656,7 @@ onlyWhenUnpaused
         ViewMemberVotes[] memory votes = new ViewMemberVotes[](length);
         uint256 head = 0;
         bool lenOver50 = length > 50;
-        for (uint256 i = length - 1; lenOver50 ? i > length - 50 : i > 0; --i) {
+        for (uint256 i = length; lenOver50 ? i > length - 50 : i > 0; --i) {
             // only grab last 50 max
             uint256 idx = i - 1;
             if (isVoteActive(idx, VoteType.MEMBERCHANGE)) {

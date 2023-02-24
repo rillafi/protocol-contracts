@@ -39,6 +39,7 @@ async function main() {
     sheet.eachRow(function (row, rowNumber) {
         if (rowNumber == 1) return;
         if (!row.getCell(4).value?.valueOf()) return;
+    console.log(rowNumber)
         vests.push({
             vestingType: row.getCell(1).value?.valueOf() as
                 | 'Team'
@@ -46,7 +47,7 @@ async function main() {
                 | 'Seed',
             name: row.getCell(2).value?.valueOf() as string,
             amount: ethers.utils.parseUnits(
-                String(row.getCell(3).value?.valueOf()),
+                row.getCell(3).toString().replace(",",""),
                 18
             ),
             address: row.getCell(4).value?.valueOf() as string,
@@ -61,7 +62,7 @@ async function main() {
 
     // init TokenVesting contract
     const startTime = 1676887200;
-    console.log(date(startTime))
+    console.log(date(startTime));
     const frame = ethProvider('frame'); // Connect to Frame
     const rilla = '0x96D17e1301b31556e5e263389583A9331e6749E9';
     const tokenVesting =
@@ -113,6 +114,7 @@ async function main() {
         const time = Math.floor(endTime - duration);
         /* const duration */
         console.log(
+            '\n\n',
             vest.row,
             'Name:',
             vest.name,
@@ -122,9 +124,9 @@ async function main() {
             date(endTime),
             'Start time:',
             date(time),
-            '\n'
+            '\n\n'
         );
-        const cliff = startTime
+        const cliff = startTime;
         const tx = await TokenVesting.populateTransaction.createVestingSchedule(
             vest.address,
             time,

@@ -19,28 +19,27 @@ async function main() {
     let feeAdd = '0x9F8ad024274A2c64f3EB964E8E5a7a447d6FC483';
     let rillaAdd = '0x96D17e1301b31556e5e263389583A9331e6749E9';
     let signer = await ethers.getSigner((network.config as any).deployer);
-    console.log(await signer.getChainId());
-    /* let dafImplementation = await ethers.getContractFactory( */
-    /*     'DAFImplementation', */
-    /*     signer */
-    /* ); */
-    /* let DafImplementation = await dafImplementation.connect(signer).deploy(); */
-    /* console.log('DafImplementation: ', DafImplementation.address); */
+    let dafImplementation = await ethers.getContractFactory(
+        'DAFImplementation',
+        signer
+    );
+    let DafImplementation = await dafImplementation.connect(signer).deploy();
+    console.log('DafImplementation: ', DafImplementation.address);
 
-    let dafImplementationAddress = '0x84Fd358423a68dd7E0080DDD1E42907e8a524Ff7';
+    /* let dafImplementationAddress = '0x84Fd358423a68dd7E0080DDD1E42907e8a524Ff7'; */
     let rillaIndexAdd = '0x2f134c84FfB8A627c8cB37B6caE85564e72f354E';
     await ethers.getContractAt('RillaIndex', rillaIndexAdd);
     let rillaIndexImpl = await ethers.getContractFactory('RillaIndex');
-    /* let RillaIndexImpl = await rillaIndexImpl.deploy(); */
-    console.log('RillaIndex: ', rillaIndexAdd);
+    let RillaIndexImpl = await rillaIndexImpl.deploy();
+    console.log('RillaIndexImpl: ', RillaIndexImpl.address);
     let RillaIndex = await upgrades.deployProxy(rillaIndexImpl, [
-        dafImplementationAddress,
+        DafImplementation.address,
         rillaAdd,
         feeAdd,
         treasuryAdd,
         ethers.BigNumber.from(1e10), // 1 cent swap rate
     ]);
-    console.log('RillaIndex: ', RillaIndex.address);
+    console.log('RillaIndexProxy: ', RillaIndex.address);
 }
 
 main();

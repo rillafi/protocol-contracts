@@ -166,6 +166,10 @@ describe('DAF', function () {
         );
         const membersDAFs = await RillaIndex.functions.getDAFsForMember(addys[0]);
         expect(membersDAFs[0] == daf.address);
+        const don = await daf.fetchActiveDonations()
+        const mc = await daf.fetchActiveMemberChanges()
+        const swp = await daf.fetchActiveSwaps()
+        console.log(don, mc, swp)
     });
 
     it('Creates a DAF with multiple members', async function () {
