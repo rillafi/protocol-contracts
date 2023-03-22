@@ -44,15 +44,21 @@ export default {
         hardhat: {
             chainId: 31337,
             forking: {
-                url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
+                // url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`,
+                url: `https://optimism-mainnet.infura.io/v3/964b41ffb98d46fe84be73c6ff77d549`,
+            },
+            accounts: {
+                mnemonic: process.env.MNEMONIC 
             },
         },
         optimism: {
-            /* url: `https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY_OPTIMISM}`, */
+            // url: `https://optimism-mainnet.infura.io/v3/964b41ffb98d46fe84be73c6ff77d549`,
             url: 'http://127.0.0.1:1248',
             chainId: 10,
             timeout: 60000,
-            deployer: '0x5117438e943ab870625dda4B0FE3b8118640fFdb',
+            // accounts: {
+                // mnemonic: process.env.MNEMONIC 
+            // },
         },
     },
     etherscan: {

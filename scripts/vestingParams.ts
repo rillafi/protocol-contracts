@@ -39,7 +39,7 @@ async function main() {
     sheet.eachRow(function (row, rowNumber) {
         if (rowNumber == 1) return;
         if (!row.getCell(4).value?.valueOf()) return;
-    console.log(rowNumber)
+        console.log(rowNumber);
         vests.push({
             vestingType: row.getCell(1).value?.valueOf() as
                 | 'Team'
@@ -47,7 +47,7 @@ async function main() {
                 | 'Seed',
             name: row.getCell(2).value?.valueOf() as string,
             amount: ethers.utils.parseUnits(
-                row.getCell(3).toString().replace(",",""),
+                row.getCell(3).toString().replace(',', ''),
                 18
             ),
             address: row.getCell(4).value?.valueOf() as string,
@@ -100,21 +100,48 @@ async function main() {
         );
     }
 
+    let skipRows = 96;
     // MAKE VESTS
-    for (let i = 0; i < vests.length; i++) {
+    for (let i = skipRows; i < vests.length; i++) {
         const vest = vests[i];
         const vestData = await TokenVesting.getVestingScheduleByAddressAndIndex(
             vest.address,
             vest.index
         );
-        if (vestData.initialized) continue;
+        if (vestData.initialized) {
+            if (vestData.cliff > Date.now() / 1000 && !vestData.revoked) {
+                const id =
+                    await TokenVesting.computeVestingScheduleIdForAddressAndIndex(
+                        vest.address,
+                        vest.index
+                    );
+                console.log(
+                    `\n\nREVOKE ${vest.row} Name: ${vest.name} Address: ${
+                        vest.address
+                    }, index: ${
+                        vest.index
+                    }, \nid: ${id.toString()}, cliffdate: ${date(
+                        vestData.cliff
+                    )}\n\n`
+                );
+                const res = await TokenVesting.revoke(id);
+                await ethers.provider.waitForTransaction(res.hash as string, 1);
+            } else if (vest.row <= 109) {
+                continue;
+            } else if (vestData.revoked) {
+            } else {
+                continue;
+            }
+        }
         const type = vestType[vest.vestingType];
         const endTime = startTime + type.duration;
         const duration = Math.floor(type.duration / (1 - type.tge / 100));
         const time = Math.floor(endTime - duration);
-        /* const duration */
+        /* const cliff = Math.floor(Date.now() / 1000) + 86400 * 2 - time; // 2 days after startTime */
+        const cliff = 0; // 2 days after startTime
         console.log(
             '\n\n',
+            'ADD VEST',
             vest.row,
             'Name:',
             vest.name,
@@ -122,12 +149,14 @@ async function main() {
             Number(ethers.utils.formatEther(vest.amount)).toLocaleString(),
             'End Date:',
             date(endTime),
+            '\n',
             'Start time:',
             date(time),
+            'Cliff valid:',
+            date(time + cliff),
             '\n\n'
         );
-        const cliff = startTime;
-        const tx = await TokenVesting.populateTransaction.createVestingSchedule(
+        const res = await TokenVesting.createVestingSchedule(
             vest.address,
             time,
             cliff,
@@ -136,14 +165,14 @@ async function main() {
             true,
             vest.amount
         );
-        tx.from = (
-            (await frame.request({ method: 'eth_requestAccounts' })) as any
-        )[0];
-        const res = await frame.request({
-            method: 'eth_sendTransaction',
-            params: [tx],
-        });
-        await ethers.provider.waitForTransaction(res as string, 1);
+        /* tx.from = ( */
+        /*     (await frame.request({ method: 'eth_requestAccounts' })) as any */
+        /* )[0]; */
+        /* const res = await frame.request({ */
+        /*     method: 'eth_sendTransaction', */
+        /*     params: [tx], */
+        /* }); */
+        await ethers.provider.waitForTransaction(res.hash as string, 1);
         console.log(
             'TokenVesting balance: ',
             Number(
